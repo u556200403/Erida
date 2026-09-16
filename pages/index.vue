@@ -12,18 +12,19 @@ useHead({ title: 'Library · TuneForge' })
 <template>
   <section>
     <p class="text-sm font-medium text-violet-400">Your collection</p>
-    <div class="mt-2 flex items-end justify-between gap-4">
+    <div class="mt-2">
       <div>
         <h1 class="text-3xl font-semibold tracking-tight text-white">Library</h1>
         <p class="mt-2 text-slate-400">{{ library.trackCount }} tracks in your library.</p>
       </div>
-      <button type="button" disabled class="rounded-md bg-violet-500 px-4 py-2 text-sm font-medium text-white opacity-50">
-        Import music
-      </button>
     </div>
 
     <div class="mt-8">
-      <LibraryTrackList :tracks="library.tracks" />
+      <p v-if="library.error" class="text-slate-400" role="alert">
+        Unable to load your library. Please try again.
+      </p>
+      <LibraryEmptyState v-else-if="library.tracks.length === 0" />
+      <LibraryTrackList v-else :tracks="library.tracks" />
     </div>
   </section>
 </template>
