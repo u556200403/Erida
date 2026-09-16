@@ -1,7 +1,7 @@
 import type { MusicLibraryRepository } from '../domain/music-library-repository'
 import type { Track } from '../domain/track'
 
-const tracks: Track[] = [
+const demoTracks: readonly Track[] = [
   {
     id: '1',
     title: 'Midnight City',
@@ -28,8 +28,21 @@ const tracks: Track[] = [
   },
 ]
 
+function cloneTrack(track: Track): Track {
+  return {
+    ...track,
+    source: { ...track.source },
+  }
+}
+
 export class InMemoryMusicLibraryRepository implements MusicLibraryRepository {
+  private readonly tracks = demoTracks.map(cloneTrack)
+
   async listTracks(): Promise<Track[]> {
-    return tracks.map((track) => ({ ...track }))
+    return this.tracks.map(cloneTrack)
+  }
+
+  async addTrack(track: Track): Promise<void> {
+    this.tracks.push(cloneTrack(track))
   }
 }
