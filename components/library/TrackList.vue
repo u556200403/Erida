@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Track } from '~/types/music'
+import type { LibraryTrackRow } from '~/types/library'
 
 defineProps<{
-  tracks: Track[]
+  tracks: LibraryTrackRow[]
 }>()
 </script>
 

@@ -1,6 +1,11 @@
 <script setup lang="ts">
 const library = useLibraryStore()
 
+await useAsyncData('library-tracks', async () => {
+  await library.loadTracks()
+  return true
+})
+
 useHead({ title: 'Library · TuneForge' })
 </script>
 
@@ -10,7 +15,7 @@ useHead({ title: 'Library · TuneForge' })
     <div class="mt-2 flex items-end justify-between gap-4">
       <div>
         <h1 class="text-3xl font-semibold tracking-tight text-white">Library</h1>
-        <p class="mt-2 text-slate-400">{{ library.trackCount }} tracks in this local preview.</p>
+        <p class="mt-2 text-slate-400">{{ library.trackCount }} tracks in your library.</p>
       </div>
       <button type="button" disabled class="rounded-md bg-violet-500 px-4 py-2 text-sm font-medium text-white opacity-50">
         Import music
