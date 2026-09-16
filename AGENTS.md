@@ -43,3 +43,10 @@ Before making large changes:
 1. Explain what you intend to change.
 2. Inspect the existing implementation.
 3. Preserve existing functionality unless the task explicitly requires changing it.
+
+## Communication
+
+- Always communicate with the user in Russian.
+- Explain plans, decisions, warnings, and results in Russian.
+- Keep code, variable names, function names, file names, Git commit messages, and technical identifiers in English.
+- Code comments should be in English unless explicitly requested otherwise.
