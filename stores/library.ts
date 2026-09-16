@@ -1,11 +1,26 @@
-import type { Playlist, Track } from '~/types/music'
+import { InMemoryMusicLibraryRepository } from '~/core/music-library/infrastructure/in-memory-music-library-repository'
+import type { Track } from '~/core/music-library/domain/track'
+import type { LibraryTrackRow } from '~/types/library'
+import type { Playlist } from '~/types/music'
+
+const musicLibraryRepository = new InMemoryMusicLibraryRepository()
+
+function toLibraryTrackRow(track: Track): LibraryTrackRow {
+  return {
+    id: track.id,
+    title: track.title,
+    artist: track.artist,
+    album: track.album ?? '—',
+    duration: track.durationSeconds === null
+      ? '—'
+      : `${Math.floor(track.durationSeconds / 60)}:${String(track.durationSeconds % 60).padStart(2, '0')}`,
+  }
+}
 
 export const useLibraryStore = defineStore('library', () => {
-  const tracks = ref<Track[]>([
-    { id: '1', title: 'Midnight City', artist: 'M83', album: 'Hurry Up, We\'re Dreaming', duration: '4:03' },
-    { id: '2', title: 'Teardrop', artist: 'Massive Attack', album: 'Mezzanine', duration: '5:30' },
-    { id: '3', title: 'Everything In Its Right Place', artist: 'Radiohead', album: 'Kid A', duration: '4:11' },
-  ])
+  const tracks = ref<LibraryTrackRow[]>([])
+  const isLoading = ref(false)
+  const error = ref<string | null>(null)
 
   const playlists = ref<Playlist[]>([
     { id: '1', name: 'Late night', trackCount: 24, description: 'Music for quiet evenings.' },
@@ -14,5 +29,19 @@ export const useLibraryStore = defineStore('library', () => {
 
   const trackCount = computed(() => tracks.value.length)
 
-  return { tracks, playlists, trackCount }
+  async function loadTracks() {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const libraryTracks = await musicLibraryRepository.listTracks()
+      tracks.value = libraryTracks.map(toLibraryTrackRow)
+    } catch {
+      error.value = 'Unable to load library tracks.'
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  return { tracks, playlists, trackCount, isLoading, error, loadTracks }
 })
