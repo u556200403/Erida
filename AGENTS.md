@@ -1,6 +1,6 @@
-# TuneForge
+# Erida
 
-TuneForge is a desktop-first music library and playlist management application.
+Erida is a desktop-first music library and playlist management application.
 
 ## Tech Stack
 
@@ -25,7 +25,7 @@ TuneForge is a desktop-first music library and playlist management application.
 
 ## Architecture
 
-TuneForge should separate the UI from music-related business logic.
+Erida should separate the UI from music-related business logic.
 
 The UI must not directly handle:
 

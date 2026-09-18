@@ -6,7 +6,7 @@ await useAsyncData('library-tracks', async () => {
   return true
 })
 
-useHead({ title: 'Library · TuneForge' })
+useHead({ title: 'Library · Erida' })
 </script>
 
 <template>
