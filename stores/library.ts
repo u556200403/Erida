@@ -1,9 +1,6 @@
-import { InMemoryMusicLibraryRepository } from '~/core/music-library/infrastructure/in-memory-music-library-repository'
 import type { Track } from '~/core/music-library/domain/track'
 import type { LibraryTrackRow } from '~/types/library'
 import type { Playlist } from '~/types/music'
-
-const musicLibraryRepository = new InMemoryMusicLibraryRepository()
 
 function toLibraryTrackRow(track: Track): LibraryTrackRow {
   return {
@@ -18,6 +15,7 @@ function toLibraryTrackRow(track: Track): LibraryTrackRow {
 }
 
 export const useLibraryStore = defineStore('library', () => {
+  const { $musicLibraryRepository: musicLibraryRepository } = useNuxtApp()
   const tracks = ref<LibraryTrackRow[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
