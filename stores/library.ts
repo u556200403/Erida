@@ -15,7 +15,10 @@ function toLibraryTrackRow(track: Track): LibraryTrackRow {
 }
 
 export const useLibraryStore = defineStore('library', () => {
-  const { $musicLibraryRepository: musicLibraryRepository } = useNuxtApp()
+  const {
+    $musicLibraryRepository: musicLibraryRepository,
+    $localMusicImportFacade: localMusicImportFacade,
+  } = useNuxtApp()
   const tracks = ref<LibraryTrackRow[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -41,5 +44,10 @@ export const useLibraryStore = defineStore('library', () => {
     }
   }
 
-  return { tracks, playlists, trackCount, isLoading, error, loadTracks }
+  async function importSelectedFiles(): Promise<void> {
+    await localMusicImportFacade.importSelectedFiles()
+    await loadTracks()
+  }
+
+  return { tracks, playlists, trackCount, isLoading, error, loadTracks, importSelectedFiles }
 })
