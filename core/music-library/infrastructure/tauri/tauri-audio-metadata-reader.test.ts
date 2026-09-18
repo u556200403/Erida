@@ -7,6 +7,10 @@ const file = {
 }
 
 describe('TauriAudioMetadataReader', () => {
+  it('constructs with the default Tauri invoke function', () => {
+    expect(() => new TauriAudioMetadataReader()).not.toThrow()
+  })
+
   it('invokes the read_audio_metadata command with the unchanged locator', async () => {
     const invoke = vi.fn().mockResolvedValue({
       title: 'Track',
