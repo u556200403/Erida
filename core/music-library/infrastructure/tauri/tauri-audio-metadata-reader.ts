@@ -12,9 +12,9 @@ interface AudioMetadataDto {
 type Invoke = <T>(command: string, args?: Record<string, unknown>) => Promise<T>
 
 export class TauriAudioMetadataReader implements AudioMetadataReader {
-  constructor(private readonly invoke: Invoke = invoke) {}
+  constructor(private readonly invokeFn: Invoke = invoke) {}
 
   async read(file: LocalMusicFile): Promise<AudioMetadata> {
-    return this.invoke<AudioMetadataDto>('read_audio_metadata', { locator: file.locator })
+    return this.invokeFn<AudioMetadataDto>('read_audio_metadata', { locator: file.locator })
   }
 }
