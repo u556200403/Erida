@@ -12,11 +12,12 @@ useHead({ title: 'Library · Erida' })
 <template>
   <section>
     <p class="text-sm font-medium text-violet-400">Your collection</p>
-    <div class="mt-2">
+    <div class="mt-2 flex items-start justify-between gap-4">
       <div>
         <h1 class="text-3xl font-semibold tracking-tight text-white">Library</h1>
         <p class="mt-2 text-slate-400">{{ library.trackCount }} tracks in your library.</p>
       </div>
+      <LibraryImportButton :on-import="library.importSelectedFiles" />
     </div>
 
     <div class="mt-8">
