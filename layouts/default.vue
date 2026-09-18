@@ -9,7 +9,7 @@ const navigation = [
   <div class="min-h-screen md:grid md:grid-cols-[15rem_1fr]">
     <aside class="border-b border-slate-800 bg-slate-900 px-5 py-6 md:border-r md:border-b-0">
       <NuxtLink to="/" class="text-xl font-semibold tracking-tight text-white">
-        TuneForge
+        Erida
       </NuxtLink>
 
       <nav class="mt-8 flex gap-2 md:flex-col" aria-label="Main navigation">

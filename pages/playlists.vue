@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const library = useLibraryStore()
 
-useHead({ title: 'Playlists · TuneForge' })
+useHead({ title: 'Playlists · Erida' })
 </script>
 
 <template>
