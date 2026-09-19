@@ -48,11 +48,21 @@ describe('TauriMusicLibraryRepository', () => {
     expect(invoke).toHaveBeenCalledWith('add_library_track', { track: localTrack })
   })
 
+  it('invokes remove_library_track with the track id', async () => {
+    const invoke = vi.fn().mockResolvedValue(undefined)
+    const repository = new TauriMusicLibraryRepository(invoke)
+
+    await repository.removeTrack('local-1')
+
+    expect(invoke).toHaveBeenCalledWith('remove_library_track', { id: 'local-1' })
+  })
+
   it('propagates native persistence errors', async () => {
     const error = new Error('Native persistence failed')
     const repository = new TauriMusicLibraryRepository(vi.fn().mockRejectedValue(error))
 
     await expect(repository.listTracks()).rejects.toBe(error)
     await expect(repository.addTrack(localTrack)).rejects.toBe(error)
+    await expect(repository.removeTrack(localTrack.id)).rejects.toBe(error)
   })
 })

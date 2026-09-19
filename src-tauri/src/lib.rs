@@ -11,6 +11,7 @@ pub fn run() {
             local_music_file_discovery::discover_audio_files,
             music_library_storage::add_library_track,
             music_library_storage::list_library_tracks,
+            music_library_storage::remove_library_track,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

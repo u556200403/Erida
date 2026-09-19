@@ -23,8 +23,10 @@ export const useLibraryStore = defineStore('library', () => {
   const tracks = ref<LibraryTrackRow[]>([])
   const isLoading = ref(false)
   const isImporting = ref(false)
+  const isRemoving = ref(false)
   const error = ref<string | null>(null)
   const importError = ref<string | null>(null)
+  const removeError = ref<string | null>(null)
 
   const playlists = ref<Playlist[]>([
     { id: '1', name: 'Late night', trackCount: 24, description: 'Music for quiet evenings.' },
@@ -33,15 +35,17 @@ export const useLibraryStore = defineStore('library', () => {
 
   const trackCount = computed(() => tracks.value.length)
 
-  async function loadTracks() {
+  async function loadTracks(): Promise<boolean> {
     isLoading.value = true
     error.value = null
 
     try {
       const libraryTracks = await musicLibraryRepository.listTracks()
       tracks.value = libraryTracks.map(toLibraryTrackRow)
+      return true
     } catch {
       error.value = 'Unable to load library tracks.'
+      return false
     } finally {
       isLoading.value = false
     }
@@ -57,6 +61,25 @@ export const useLibraryStore = defineStore('library', () => {
 
   async function importDroppedPaths(paths: readonly string[]): Promise<void> {
     await runImport(() => localMusicImportFacade.importDroppedPaths(paths))
+  }
+
+  async function removeTrack(id: string): Promise<boolean> {
+    if (isRemoving.value) {
+      return false
+    }
+
+    isRemoving.value = true
+    removeError.value = null
+
+    try {
+      await musicLibraryRepository.removeTrack(id)
+      return await loadTracks()
+    } catch (error) {
+      removeError.value = 'Unable to remove track. Please try again.'
+      throw error
+    } finally {
+      isRemoving.value = false
+    }
   }
 
   async function runImport(action: () => Promise<unknown>): Promise<void> {
@@ -83,11 +106,14 @@ export const useLibraryStore = defineStore('library', () => {
     trackCount,
     isLoading,
     isImporting,
+    isRemoving,
     error,
     importError,
+    removeError,
     loadTracks,
     importSelectedFiles,
     importSelectedFolder,
     importDroppedPaths,
+    removeTrack,
   }
 })

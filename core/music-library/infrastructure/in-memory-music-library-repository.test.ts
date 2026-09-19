@@ -39,4 +39,15 @@ describe('InMemoryMusicLibraryRepository', () => {
     await expect(firstRepository.listTracks()).resolves.toContainEqual(track)
     await expect(secondRepository.listTracks()).resolves.not.toContainEqual(track)
   })
+
+  it('removes only the matching library record and ignores a missing id', async () => {
+    const repository = new InMemoryMusicLibraryRepository()
+    await repository.addTrack(track)
+
+    await repository.removeTrack(track.id)
+    await repository.removeTrack('missing-track')
+
+    await expect(repository.listTracks()).resolves.not.toContainEqual(track)
+    await expect(repository.listTracks()).resolves.toHaveLength(3)
+  })
 })

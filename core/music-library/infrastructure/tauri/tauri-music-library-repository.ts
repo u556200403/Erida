@@ -39,4 +39,8 @@ export class TauriMusicLibraryRepository implements MusicLibraryRepository {
   async addTrack(track: Track): Promise<void> {
     await this.invokeFn<void>('add_library_track', { track: toLibraryTrackDto(track) })
   }
+
+  async removeTrack(id: string): Promise<void> {
+    await this.invokeFn<void>('remove_library_track', { id })
+  }
 }

@@ -3,6 +3,11 @@ import type { LibraryTrackRow } from '~/types/library'
 
 defineProps<{
   track: LibraryTrackRow
+  isRemoving?: boolean
+}>()
+
+const emit = defineEmits<{
+  remove: []
 }>()
 </script>
 
@@ -29,5 +34,14 @@ defineProps<{
         <dd class="mt-1 break-all text-base text-white">{{ track.source.locator }}</dd>
       </div>
     </dl>
+
+    <button
+      type="button"
+      class="mt-8 rounded-md border border-red-500/50 px-4 py-2 text-sm font-medium text-red-300 transition hover:border-red-400 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+      :disabled="isRemoving"
+      @click="emit('remove')"
+    >
+      {{ isRemoving ? 'Removing…' : 'Remove from library' }}
+    </button>
   </section>
 </template>

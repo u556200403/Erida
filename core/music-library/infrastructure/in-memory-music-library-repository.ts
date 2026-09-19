@@ -45,4 +45,12 @@ export class InMemoryMusicLibraryRepository implements MusicLibraryRepository {
   async addTrack(track: Track): Promise<void> {
     this.tracks.push(cloneTrack(track))
   }
+
+  async removeTrack(id: string): Promise<void> {
+    const index = this.tracks.findIndex((track) => track.id === id)
+
+    if (index !== -1) {
+      this.tracks.splice(index, 1)
+    }
+  }
 }

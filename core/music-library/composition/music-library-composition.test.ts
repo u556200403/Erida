@@ -8,6 +8,7 @@ const { pickFiles, pickFolder, readMetadata, repositoryInstances } = vi.hoisted(
     tracks: unknown[]
     addTrack: ReturnType<typeof vi.fn>
     listTracks: ReturnType<typeof vi.fn>
+    removeTrack: ReturnType<typeof vi.fn>
   }>,
 }))
 
@@ -40,6 +41,9 @@ vi.mock('../infrastructure/tauri/tauri-music-library-repository', () => ({
       this.tracks.push(track)
     })
     listTracks = vi.fn(async () => this.tracks)
+    removeTrack = vi.fn(async (id: string) => {
+      this.tracks = this.tracks.filter((track) => (track as { id: string }).id !== id)
+    })
 
     constructor() {
       repositoryInstances.push(this)
