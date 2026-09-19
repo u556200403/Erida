@@ -8,6 +8,7 @@ const localTrack: Track = {
   artist: 'Lumen',
   album: 'First Light',
   durationSeconds: 212.75,
+  artworkRef: 'embedded/local-1.jpg',
   source: { kind: 'local', locator: 'C:/Music/Afterglow.mp3' },
 }
 
@@ -17,6 +18,7 @@ const serviceTrack: Track = {
   artist: 'Nova',
   album: null,
   durationSeconds: null,
+  artworkRef: null,
   source: { kind: 'service', provider: 'spotify', externalId: 'orbit-42' },
 }
 

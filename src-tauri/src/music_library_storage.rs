@@ -8,7 +8,7 @@ use rusqlite::{params, Connection, TransactionBehavior};
 use serde::{Deserialize, Serialize};
 use tauri::Manager;
 
-const INITIAL_SCHEMA_VERSION: i64 = 1;
+const CURRENT_SCHEMA_VERSION: i64 = 2;
 const DATABASE_FILE_NAME: &str = "music-library.sqlite3";
 const DATABASE_BUSY_TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -20,6 +20,7 @@ pub struct LibraryTrackDto {
     pub artist: String,
     pub album: Option<String>,
     pub duration_seconds: Option<f64>,
+    pub artwork_ref: Option<String>,
     pub source: TrackSourceDto,
 }
 
@@ -133,11 +134,12 @@ impl MusicLibraryStorage {
                 artist,
                 album,
                 duration_seconds,
+                artwork_ref,
                 source_kind,
                 local_locator,
                 service_provider,
                 service_external_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ",
             params![
                 track.id,
@@ -145,6 +147,7 @@ impl MusicLibraryStorage {
                 track.artist,
                 track.album,
                 track.duration_seconds,
+                track.artwork_ref,
                 source_kind,
                 local_locator,
                 service_provider,
@@ -171,6 +174,7 @@ impl MusicLibraryStorage {
                 artist,
                 album,
                 duration_seconds,
+                artwork_ref,
                 source_kind,
                 local_locator,
                 service_provider,
@@ -181,18 +185,18 @@ impl MusicLibraryStorage {
         )?;
         let tracks = statement
             .query_map([], |row| {
-                let source_kind: String = row.get(5)?;
+                let source_kind: String = row.get(6)?;
                 let source = match source_kind.as_str() {
                     "local" => TrackSourceDto::Local {
-                        locator: row.get(6)?,
+                        locator: row.get(7)?,
                     },
                     "service" => TrackSourceDto::Service {
-                        provider: row.get(7)?,
-                        external_id: row.get(8)?,
+                        provider: row.get(8)?,
+                        external_id: row.get(9)?,
                     },
                     _ => {
                         return Err(rusqlite::Error::InvalidColumnType(
-                            5,
+                            6,
                             "source_kind".into(),
                             rusqlite::types::Type::Text,
                         ));
@@ -205,6 +209,7 @@ impl MusicLibraryStorage {
                     artist: row.get(2)?,
                     album: row.get(3)?,
                     duration_seconds: row.get(4)?,
+                    artwork_ref: row.get(5)?,
                     source,
                 })
             })?
@@ -274,6 +279,7 @@ fn apply_migrations(connection: &mut Connection) -> Result<(), StorageError> {
                     artist TEXT NOT NULL,
                     album TEXT,
                     duration_seconds REAL CHECK (duration_seconds IS NULL OR duration_seconds >= 0),
+                    artwork_ref TEXT,
                     source_kind TEXT NOT NULL CHECK (source_kind IN ('local', 'service')),
                     local_locator TEXT,
                     service_provider TEXT,
@@ -292,9 +298,13 @@ fn apply_migrations(connection: &mut Connection) -> Result<(), StorageError> {
                 );
                 ",
             )?;
-            transaction.pragma_update(None, "user_version", INITIAL_SCHEMA_VERSION)?;
+            transaction.pragma_update(None, "user_version", CURRENT_SCHEMA_VERSION)?;
         }
-        INITIAL_SCHEMA_VERSION => {}
+        1 => {
+            transaction.execute_batch("ALTER TABLE tracks ADD COLUMN artwork_ref TEXT;")?;
+            transaction.pragma_update(None, "user_version", CURRENT_SCHEMA_VERSION)?;
+        }
+        CURRENT_SCHEMA_VERSION => {}
         version => return Err(StorageError::UnsupportedSchemaVersion(version)),
     }
 
@@ -316,7 +326,7 @@ fn validate_track(track: &LibraryTrackDto) -> Result<(), StorageError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{LibraryTrackDto, MusicLibraryStorage, TrackSourceDto, INITIAL_SCHEMA_VERSION};
+    use super::{LibraryTrackDto, MusicLibraryStorage, TrackSourceDto, CURRENT_SCHEMA_VERSION};
     use rusqlite::{params, Connection};
     use std::{
         fs,
@@ -366,6 +376,7 @@ mod tests {
             artist: format!("Artist {id}"),
             album: Some(format!("Album {id}")),
             duration_seconds: Some(123.456_789),
+            artwork_ref: Some(format!("embedded/{id}.jpg")),
             source: TrackSourceDto::Local {
                 locator: locator.into(),
             },
@@ -379,6 +390,7 @@ mod tests {
             artist: format!("Artist {id}"),
             album: None,
             duration_seconds: None,
+            artwork_ref: None,
             source: TrackSourceDto::Service {
                 provider: "spotify".into(),
                 external_id: format!("external-{id}"),
@@ -535,7 +547,67 @@ mod tests {
         let schema_version: i64 = connection
             .pragma_query_value(None, "user_version", |row| row.get(0))
             .expect("schema version should read");
-        assert_eq!(schema_version, INITIAL_SCHEMA_VERSION);
+        assert_eq!(schema_version, CURRENT_SCHEMA_VERSION);
+    }
+
+    #[test]
+    fn migrates_version_one_without_losing_existing_tracks() {
+        let database = TemporaryDatabase::new();
+        fs::create_dir_all(database.path().parent().expect("database should have a parent"))
+            .expect("temporary database directory should be created");
+        let connection = Connection::open(database.path()).expect("database should open");
+        connection
+            .execute_batch(
+                "
+                CREATE TABLE tracks (
+                    insertion_order INTEGER PRIMARY KEY,
+                    id TEXT NOT NULL UNIQUE,
+                    title TEXT NOT NULL,
+                    artist TEXT NOT NULL,
+                    album TEXT,
+                    duration_seconds REAL CHECK (duration_seconds IS NULL OR duration_seconds >= 0),
+                    source_kind TEXT NOT NULL CHECK (source_kind IN ('local', 'service')),
+                    local_locator TEXT,
+                    service_provider TEXT,
+                    service_external_id TEXT,
+                    CHECK (
+                        (source_kind = 'local'
+                            AND local_locator IS NOT NULL
+                            AND service_provider IS NULL
+                            AND service_external_id IS NULL)
+                        OR
+                        (source_kind = 'service'
+                            AND local_locator IS NULL
+                            AND service_provider IS NOT NULL
+                            AND service_external_id IS NOT NULL)
+                    )
+                );
+                PRAGMA user_version = 1;
+                ",
+            )
+            .expect("version one schema should initialize");
+        connection
+            .execute(
+                "INSERT INTO tracks (id, title, artist, source_kind, local_locator) VALUES (?, ?, ?, ?, ?)",
+                params!["legacy", "Legacy", "Artist", "local", "C:\\Music\\Legacy.mp3"],
+            )
+            .expect("legacy track should insert");
+        drop(connection);
+
+        let storage = MusicLibraryStorage::open(database.path()).expect("migration should succeed");
+
+        assert_eq!(
+            storage.list_tracks().expect("tracks should list"),
+            vec![LibraryTrackDto {
+                id: "legacy".into(),
+                title: "Legacy".into(),
+                artist: "Artist".into(),
+                album: None,
+                duration_seconds: None,
+                artwork_ref: None,
+                source: TrackSourceDto::Local { locator: "C:\\Music\\Legacy.mp3".into() },
+            }]
+        );
     }
 
     #[test]
@@ -566,7 +638,7 @@ mod tests {
         let schema_version: i64 = connection
             .pragma_query_value(None, "user_version", |row| row.get(0))
             .expect("schema version should read");
-        assert_eq!(schema_version, INITIAL_SCHEMA_VERSION);
+        assert_eq!(schema_version, CURRENT_SCHEMA_VERSION);
     }
 
     #[test]

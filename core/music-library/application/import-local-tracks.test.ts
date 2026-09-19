@@ -1,9 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { MusicLibraryRepository } from '../domain/music-library-repository'
 import type { AudioMetadataReader } from './audio-metadata-reader'
+import type { EmbeddedArtworkExtractor } from './embedded-artwork-extractor'
 import { ImportLocalTracks, titleFromFilename } from './import-local-tracks'
 
 describe('ImportLocalTracks', () => {
+  const noArtwork: EmbeddedArtworkExtractor = {
+    extract: vi.fn().mockResolvedValue(null),
+  }
+
   it('converts a local music file into a local track and persists it', async () => {
     const repository: MusicLibraryRepository = {
   listTracks: vi.fn(),
@@ -19,7 +24,7 @@ describe('ImportLocalTracks', () => {
       }),
     }
     const generateTrackId = vi.fn(() => 'track-1')
-    const useCase = new ImportLocalTracks(repository, metadataReader, generateTrackId)
+    const useCase = new ImportLocalTracks(repository, metadataReader, noArtwork, generateTrackId)
 
     const tracks = await useCase.execute([
       { locator: 'file:///music/Neon%20Lights.mp3', filename: 'Neon Lights.mp3' },
@@ -31,6 +36,7 @@ describe('ImportLocalTracks', () => {
       artist: 'The Comets',
       album: 'Midnight Drive',
       durationSeconds: 245,
+      artworkRef: null,
       source: { kind: 'local' as const, locator: 'file:///music/Neon%20Lights.mp3' },
     }
 
@@ -55,7 +61,7 @@ describe('ImportLocalTracks', () => {
         durationSeconds: null,
       }),
     }
-    const useCase = new ImportLocalTracks(repository, metadataReader, () => 'track-1')
+    const useCase = new ImportLocalTracks(repository, metadataReader, noArtwork, () => 'track-1')
 
     const tracks = await useCase.execute([
       { locator: 'file:///music/Live.At.Home.flac', filename: 'Live.At.Home.flac' },
@@ -91,7 +97,7 @@ describe('ImportLocalTracks', () => {
         durationSeconds: null,
       }),
     }
-    const useCase = new ImportLocalTracks(repository, metadataReader, generateTrackId)
+    const useCase = new ImportLocalTracks(repository, metadataReader, noArtwork, generateTrackId)
 
     const tracks = await useCase.execute([
       { locator: 'file:///music/First.mp3', filename: 'First.mp3' },
@@ -124,7 +130,7 @@ describe('ImportLocalTracks', () => {
     const generateTrackId = vi.fn()
       .mockReturnValueOnce('track-1')
       .mockReturnValueOnce('track-2')
-    const useCase = new ImportLocalTracks(repository, metadataReader, generateTrackId)
+    const useCase = new ImportLocalTracks(repository, metadataReader, noArtwork, generateTrackId)
 
     const tracks = await useCase.execute([
       { locator: 'file:///music/First.mp3', filename: 'First.mp3' },
@@ -151,5 +157,55 @@ describe('ImportLocalTracks', () => {
     expect(repository.addTrack).toHaveBeenCalledTimes(2)
     expect(repository.addTrack).toHaveBeenNthCalledWith(1, tracks[0])
     expect(repository.addTrack).toHaveBeenNthCalledWith(2, tracks[1])
+  })
+
+  it('persists extracted artwork without putting its bytes on the track', async () => {
+    const repository: MusicLibraryRepository = {
+      listTracks: vi.fn(), addTrack: vi.fn(), removeTrack: vi.fn(),
+    }
+    const metadataReader: AudioMetadataReader = {
+      read: vi.fn().mockResolvedValue({ title: null, artist: null, album: null, durationSeconds: null }),
+    }
+    const artworkExtractor: EmbeddedArtworkExtractor = {
+      extract: vi.fn().mockResolvedValue('embedded/track-1.jpg'),
+    }
+    const useCase = new ImportLocalTracks(repository, metadataReader, artworkExtractor, () => 'track-1')
+
+    await expect(useCase.execute([{ locator: 'C:/Music/Track.mp3', filename: 'Track.mp3' }]))
+      .resolves.toMatchObject([{ id: 'track-1', artworkRef: 'embedded/track-1.jpg' }])
+    expect(artworkExtractor.extract).toHaveBeenCalledWith(
+      { locator: 'C:/Music/Track.mp3', filename: 'Track.mp3' },
+      'track-1',
+    )
+  })
+
+  it('persists a track when artwork extraction fails', async () => {
+    const repository: MusicLibraryRepository = {
+      listTracks: vi.fn(), addTrack: vi.fn(), removeTrack: vi.fn(),
+    }
+    const metadataReader: AudioMetadataReader = {
+      read: vi.fn().mockResolvedValue({ title: 'Track', artist: 'Artist', album: null, durationSeconds: null }),
+    }
+    const artworkExtractor: EmbeddedArtworkExtractor = {
+      extract: vi.fn().mockRejectedValue(new Error('Cache unavailable')),
+    }
+    const useCase = new ImportLocalTracks(repository, metadataReader, artworkExtractor, () => 'track-1')
+
+    await expect(useCase.execute([{ locator: 'C:/Music/Track.mp3', filename: 'Track.mp3' }]))
+      .resolves.toMatchObject([{ artworkRef: null }])
+    expect(repository.addTrack).toHaveBeenCalledWith(expect.objectContaining({ artworkRef: null }))
+  })
+
+  it('propagates repository failures after metadata and artwork processing', async () => {
+    const error = new Error('SQLite is busy')
+    const repository: MusicLibraryRepository = {
+      listTracks: vi.fn(), addTrack: vi.fn().mockRejectedValue(error), removeTrack: vi.fn(),
+    }
+    const metadataReader: AudioMetadataReader = {
+      read: vi.fn().mockResolvedValue({ title: null, artist: null, album: null, durationSeconds: null }),
+    }
+    const useCase = new ImportLocalTracks(repository, metadataReader, noArtwork, () => 'track-1')
+
+    await expect(useCase.execute([{ locator: 'C:/Music/Track.mp3', filename: 'Track.mp3' }])).rejects.toBe(error)
   })
 })

@@ -1,4 +1,5 @@
 export type TrackId = string
+export type ArtworkRef = string
 
 export type TrackSource =
   | {
@@ -17,5 +18,6 @@ export interface Track {
   artist: string
   album: string | null
   durationSeconds: number | null
+  artworkRef: ArtworkRef | null
   source: TrackSource
 }

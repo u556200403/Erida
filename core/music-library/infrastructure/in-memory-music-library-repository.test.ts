@@ -8,6 +8,7 @@ const track: Track = {
   artist: 'Kavinsky',
   album: 'OutRun',
   durationSeconds: 257,
+  artworkRef: null,
   source: { kind: 'service', provider: 'demo', externalId: 'nightcall' },
 }
 

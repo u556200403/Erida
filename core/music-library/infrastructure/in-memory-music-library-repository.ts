@@ -8,6 +8,7 @@ const demoTracks: readonly Track[] = [
     artist: 'M83',
     album: "Hurry Up, We're Dreaming",
     durationSeconds: 243,
+    artworkRef: null,
     source: { kind: 'local', locator: 'demo:midnight-city' },
   },
   {
@@ -16,6 +17,7 @@ const demoTracks: readonly Track[] = [
     artist: 'Massive Attack',
     album: 'Mezzanine',
     durationSeconds: 330,
+    artworkRef: null,
     source: { kind: 'local', locator: 'demo:teardrop' },
   },
   {
@@ -24,6 +26,7 @@ const demoTracks: readonly Track[] = [
     artist: 'Radiohead',
     album: 'Kid A',
     durationSeconds: 251,
+    artworkRef: null,
     source: { kind: 'local', locator: 'demo:everything-in-its-right-place' },
   },
 ]
