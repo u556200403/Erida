@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Track } from '../domain/track'
 import type { LocalMusicFile } from './local-music-file'
+import type { LocalMusicFileDiscovery } from './local-music-file-discovery'
 import type { LocalMusicFilePicker } from './local-music-file-picker'
 import {
   LocalMusicImportFacade,
@@ -29,7 +30,7 @@ describe('LocalMusicImportFacade', () => {
     const importLocalTracks: LocalTracksImporter = {
       execute: vi.fn().mockResolvedValue(importedTracks),
     }
-    const facade = new LocalMusicImportFacade(filePicker, importLocalTracks)
+    const facade = new LocalMusicImportFacade(filePicker, { discover: vi.fn() }, importLocalTracks)
 
     const tracks = await facade.importSelectedFiles()
 
@@ -48,7 +49,7 @@ describe('LocalMusicImportFacade', () => {
     const importLocalTracks: LocalTracksImporter = {
       execute: vi.fn(),
     }
-    const facade = new LocalMusicImportFacade(filePicker, importLocalTracks)
+    const facade = new LocalMusicImportFacade(filePicker, { discover: vi.fn() }, importLocalTracks)
 
     await expect(facade.importSelectedFiles()).resolves.toEqual([])
 
@@ -67,7 +68,7 @@ describe('LocalMusicImportFacade', () => {
     const importLocalTracks: LocalTracksImporter = {
       execute: vi.fn().mockResolvedValue([]),
     }
-    const facade = new LocalMusicImportFacade(filePicker, importLocalTracks)
+    const facade = new LocalMusicImportFacade(filePicker, { discover: vi.fn() }, importLocalTracks)
 
     await facade.importSelectedFolder()
 
@@ -82,10 +83,40 @@ describe('LocalMusicImportFacade', () => {
       pickFolder: vi.fn().mockResolvedValue([]),
     }
     const importLocalTracks: LocalTracksImporter = { execute: vi.fn() }
-    const facade = new LocalMusicImportFacade(filePicker, importLocalTracks)
+    const facade = new LocalMusicImportFacade(filePicker, { discover: vi.fn() }, importLocalTracks)
 
     await expect(facade.importSelectedFolder()).resolves.toEqual([])
 
+    expect(importLocalTracks.execute).not.toHaveBeenCalled()
+  })
+
+  it('normalizes dropped paths before passing them through the existing importer', async () => {
+    const files: readonly LocalMusicFile[] = [
+      { locator: 'C:\\Music\\First.mp3', filename: 'First.mp3' },
+      { locator: 'C:\\Music\\Album\\Second.flac', filename: 'Second.flac' },
+    ]
+    const filePicker: LocalMusicFilePicker = { pickFiles: vi.fn(), pickFolder: vi.fn() }
+    const fileDiscovery: LocalMusicFileDiscovery = {
+      discover: vi.fn().mockResolvedValue(files),
+    }
+    const importLocalTracks: LocalTracksImporter = { execute: vi.fn().mockResolvedValue([]) }
+    const facade = new LocalMusicImportFacade(filePicker, fileDiscovery, importLocalTracks)
+
+    await facade.importDroppedPaths(['C:\\Music\\First.mp3', 'C:\\Music\\Album'])
+
+    expect(fileDiscovery.discover).toHaveBeenCalledWith(['C:\\Music\\First.mp3', 'C:\\Music\\Album'])
+    expect(importLocalTracks.execute).toHaveBeenCalledWith(files)
+  })
+
+  it('does not invoke the importer when a drop normalizes to no files', async () => {
+    const filePicker: LocalMusicFilePicker = { pickFiles: vi.fn(), pickFolder: vi.fn() }
+    const fileDiscovery: LocalMusicFileDiscovery = { discover: vi.fn().mockResolvedValue([]) }
+    const importLocalTracks: LocalTracksImporter = { execute: vi.fn() }
+    const facade = new LocalMusicImportFacade(filePicker, fileDiscovery, importLocalTracks)
+
+    await facade.importDroppedPaths([])
+
+    expect(fileDiscovery.discover).toHaveBeenCalledWith([])
     expect(importLocalTracks.execute).not.toHaveBeenCalled()
   })
 })

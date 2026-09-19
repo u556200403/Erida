@@ -4,10 +4,10 @@ import { nextTick, ref } from 'vue'
 const props = defineProps<{
   onImport: () => Promise<void>
   onImportFolder: () => Promise<void>
+  isImporting: boolean
+  importError: string | null
 }>()
 
-const isImporting = ref(false)
-const importError = ref<string | null>(null)
 const isMenuOpen = ref(false)
 const importButton = ref<HTMLButtonElement | null>(null)
 const fileMenuItem = ref<HTMLButtonElement | null>(null)
@@ -27,7 +27,7 @@ async function selectImport(action: () => Promise<void>) {
 }
 
 async function toggleMenu() {
-  if (isImporting.value) {
+  if (props.isImporting) {
     return
   }
 
@@ -62,20 +62,7 @@ function focusMenuItem(direction: 1 | -1) {
 }
 
 async function runImport(action: () => Promise<void>) {
-  if (isImporting.value) {
-    return
-  }
-
-  isImporting.value = true
-  importError.value = null
-
-  try {
-    await action()
-  } catch {
-    importError.value = 'Unable to import music. Please try again.'
-  } finally {
-    isImporting.value = false
-  }
+  await action()
 }
 </script>
 
@@ -88,10 +75,10 @@ async function runImport(action: () => Promise<void>) {
         class="rounded-md bg-violet-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-60"
         aria-haspopup="menu"
         :aria-expanded="isMenuOpen"
-        :disabled="isImporting"
+        :disabled="props.isImporting"
         @click="toggleMenu"
       >
-        {{ isImporting ? 'Importing…' : 'Import music' }}
+        {{ props.isImporting ? 'Importing…' : 'Import music' }}
       </button>
       <div
         v-if="isMenuOpen"
@@ -107,7 +94,7 @@ async function runImport(action: () => Promise<void>) {
           type="button"
           class="w-full rounded px-3 py-2 text-left text-sm text-slate-100 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           role="menuitem"
-          :disabled="isImporting"
+          :disabled="props.isImporting"
           @click="importFiles"
         >
           Choose files
@@ -117,18 +104,18 @@ async function runImport(action: () => Promise<void>) {
           type="button"
           class="w-full rounded px-3 py-2 text-left text-sm text-slate-100 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           role="menuitem"
-          :disabled="isImporting"
+          :disabled="props.isImporting"
           @click="importFolder"
         >
           Choose folder
         </button>
       </div>
     </div>
-    <p v-if="isImporting" class="text-sm text-slate-400" role="status">
+    <p v-if="props.isImporting" class="text-sm text-slate-400" role="status">
       Importing selected music…
     </p>
-    <p v-else-if="importError" class="text-sm text-red-400" role="alert">
-      {{ importError }}
+    <p v-else-if="props.importError" class="text-sm text-red-400" role="alert">
+      {{ props.importError }}
     </p>
   </div>
 </template>

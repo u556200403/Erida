@@ -1,20 +1,20 @@
 // @vitest-environment happy-dom
-import { flushPromises, mount } from '@vue/test-utils'
+import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import ImportButton from './ImportButton.vue'
 
-function createDeferredPromise() {
-  let resolve!: () => void
-  const promise = new Promise<void>((promiseResolve) => {
-    resolve = promiseResolve
-  })
-
-  return { promise, resolve }
+function defaultProps() {
+  return {
+    onImport: vi.fn(),
+    onImportFolder: vi.fn(),
+    isImporting: false,
+    importError: null,
+  }
 }
 
 describe('LibraryImportButton', () => {
   it('keeps the import menu closed initially', () => {
-    const wrapper = mount(ImportButton, { props: { onImport: vi.fn(), onImportFolder: vi.fn() } })
+    const wrapper = mount(ImportButton, { props: defaultProps() })
 
     expect(wrapper.find('[role="menu"]').exists()).toBe(false)
     expect(wrapper.get('button').attributes('aria-expanded')).toBe('false')
@@ -23,7 +23,7 @@ describe('LibraryImportButton', () => {
   it('opens the import menu from the primary button', async () => {
     const wrapper = mount(ImportButton, {
       attachTo: document.body,
-      props: { onImport: vi.fn(), onImportFolder: vi.fn() },
+      props: defaultProps(),
     })
 
     await wrapper.get('button').trigger('click')
@@ -39,7 +39,7 @@ describe('LibraryImportButton', () => {
   it('moves focus between menu items with arrow keys and wraps', async () => {
     const wrapper = mount(ImportButton, {
       attachTo: document.body,
-      props: { onImport: vi.fn(), onImportFolder: vi.fn() },
+      props: defaultProps(),
     })
 
     await wrapper.get('button').trigger('click')
@@ -61,55 +61,51 @@ describe('LibraryImportButton', () => {
   })
 
   it('imports selected files, closes the menu, and represents the pending state', async () => {
-    const deferred = createDeferredPromise()
-    const onImport = vi.fn(() => deferred.promise)
-    const wrapper = mount(ImportButton, { props: { onImport, onImportFolder: vi.fn() } })
+    const onImport = vi.fn().mockResolvedValue(undefined)
+    const wrapper = mount(ImportButton, {
+      props: { ...defaultProps(), onImport },
+    })
 
     await wrapper.get('button').trigger('click')
     await wrapper.get('[role="menuitem"]').trigger('click')
 
     expect(onImport).toHaveBeenCalledOnce()
     expect(wrapper.find('[role="menu"]').exists()).toBe(false)
+
+    await wrapper.setProps({ isImporting: true })
+
     expect(wrapper.get('button').attributes('disabled')).toBeDefined()
     expect(wrapper.get('[role="status"]').text()).toBe('Importing selected music…')
 
-    deferred.resolve()
-    await flushPromises()
+    await wrapper.setProps({ isImporting: false })
 
     expect(wrapper.get('button').text()).toBe('Import music')
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
   })
 
-  it('shows an import error and lets the user retry', async () => {
-    const onImport = vi.fn()
-      .mockRejectedValueOnce(new Error('Import failed'))
-      .mockResolvedValueOnce(undefined)
-    const wrapper = mount(ImportButton, { props: { onImport, onImportFolder: vi.fn() } })
-
-    await wrapper.get('button').trigger('click')
-    await wrapper.get('[role="menuitem"]').trigger('click')
-    await flushPromises()
+  it('shows an import error supplied by the shared import state', async () => {
+    const wrapper = mount(ImportButton, {
+      props: { ...defaultProps(), importError: 'Unable to import music. Please try again.' },
+    })
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Unable to import music. Please try again.')
-    expect(wrapper.get('button').attributes('disabled')).toBeUndefined()
 
-    await wrapper.get('button').trigger('click')
-    await wrapper.get('[role="menuitem"]').trigger('click')
-    await flushPromises()
+    await wrapper.setProps({ importError: null })
 
-    expect(onImport).toHaveBeenCalledTimes(2)
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
     expect(wrapper.get('button').text()).toBe('Import music')
   })
 
-  it('imports a folder and prevents another import while it is pending', async () => {
-    const deferred = createDeferredPromise()
+  it('imports a folder and respects shared pending state', async () => {
     const onImport = vi.fn()
-    const onImportFolder = vi.fn(() => deferred.promise)
-    const wrapper = mount(ImportButton, { props: { onImport, onImportFolder } })
+    const onImportFolder = vi.fn().mockResolvedValue(undefined)
+    const wrapper = mount(ImportButton, {
+      props: { ...defaultProps(), onImport, onImportFolder },
+    })
 
     await wrapper.get('button').trigger('click')
     await wrapper.findAll('[role="menuitem"]')[1].trigger('click')
+    await wrapper.setProps({ isImporting: true })
     await wrapper.get('button').trigger('click')
 
     expect(onImportFolder).toHaveBeenCalledOnce()
@@ -117,14 +113,12 @@ describe('LibraryImportButton', () => {
     expect(wrapper.get('button').attributes('disabled')).toBeDefined()
     expect(wrapper.find('[role="menu"]').exists()).toBe(false)
 
-    deferred.resolve()
-    await flushPromises()
   })
 
   it('closes the menu with Escape', async () => {
     const wrapper = mount(ImportButton, {
       attachTo: document.body,
-      props: { onImport: vi.fn(), onImportFolder: vi.fn() },
+      props: defaultProps(),
     })
 
     await wrapper.get('button').trigger('click')
