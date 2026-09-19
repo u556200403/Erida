@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { pickFiles, pickFolder, readMetadata, repositoryInstances } = vi.hoisted(() => ({
+const { pickFiles, pickFolder, readMetadata, extractArtwork, repositoryInstances } = vi.hoisted(() => ({
   pickFiles: vi.fn(),
   pickFolder: vi.fn(),
   readMetadata: vi.fn(),
+  extractArtwork: vi.fn().mockResolvedValue(null),
   repositoryInstances: [] as Array<{
     tracks: unknown[]
     addTrack: ReturnType<typeof vi.fn>
@@ -31,6 +32,12 @@ vi.mock('../infrastructure/tauri/tauri-local-music-file-picker', () => ({
 vi.mock('../infrastructure/tauri/tauri-audio-metadata-reader', () => ({
   TauriAudioMetadataReader: class {
     read = readMetadata
+  },
+}))
+
+vi.mock('../infrastructure/tauri/tauri-embedded-artwork-extractor', () => ({
+  TauriEmbeddedArtworkExtractor: class {
+    extract = extractArtwork
   },
 }))
 
@@ -69,6 +76,7 @@ describe('createMusicLibraryApplication', () => {
       artist: 'Lumen',
       album: null,
       durationSeconds: 212,
+      artworkRef: null,
     })
     const { musicLibraryRepository, localMusicImportFacade } = createMusicLibraryApplication()
 
@@ -90,6 +98,7 @@ describe('createMusicLibraryApplication', () => {
     })
     expect(pickFiles).toHaveBeenCalledOnce()
     expect(readMetadata).toHaveBeenCalledOnce()
+    expect(extractArtwork).toHaveBeenCalledOnce()
     expect(repositoryInstances[0]?.addTrack).toHaveBeenCalledOnce()
     expect(repositoryInstances[0]?.listTracks).toHaveBeenCalledOnce()
   })
@@ -103,6 +112,7 @@ describe('createMusicLibraryApplication', () => {
       artist: null,
       album: null,
       durationSeconds: null,
+      artworkRef: null,
     })
     const { musicLibraryRepository, localMusicImportFacade } = createMusicLibraryApplication()
 
@@ -114,6 +124,7 @@ describe('createMusicLibraryApplication', () => {
 
     expect(pickFolder).toHaveBeenCalledOnce()
     expect(readMetadata).toHaveBeenCalledOnce()
+    expect(extractArtwork).toHaveBeenCalledOnce()
     await expect(musicLibraryRepository.listTracks()).resolves.toContainEqual({
       id: expect.any(String),
       title: 'Folder Track',
@@ -135,6 +146,7 @@ describe('createMusicLibraryApplication', () => {
       artist: 'Lumen',
       album: null,
       durationSeconds: 190,
+      artworkRef: null,
     })
     const { musicLibraryRepository, localMusicImportFacade } = createMusicLibraryApplication()
 

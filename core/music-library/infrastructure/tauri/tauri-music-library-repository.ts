@@ -8,6 +8,7 @@ interface LibraryTrackDto {
   artist: string
   album: string | null
   durationSeconds: number | null
+  artworkRef: string | null
   source: TrackSource
 }
 
