@@ -276,7 +276,7 @@ mod tests {
         let directory = TemporaryDirectory::new();
         let target = directory.path().join("target");
         let link = directory.path().join("root-link");
-        let file = directory.create_file("target/Linked.mp3");
+        directory.create_file("target/Linked.mp3");
 
         if !create_directory_symlink_or_skip(&target, &link) {
             return;
@@ -287,7 +287,7 @@ mod tests {
         assert_eq!(
             files,
             vec![super::LocalMusicFileDto {
-                locator: file.to_string_lossy().into_owned(),
+                locator: link.join("Linked.mp3").to_string_lossy().into_owned(),
                 filename: "Linked.mp3".into(),
             }]
         );
