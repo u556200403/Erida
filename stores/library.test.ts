@@ -10,8 +10,9 @@ const repository: MusicLibraryRepository = {
   listTracks: vi.fn(),
   addTrack: vi.fn(),
 }
-const localMusicImportFacade: Pick<LocalMusicImportFacade, 'importSelectedFiles'> = {
+const localMusicImportFacade: Pick<LocalMusicImportFacade, 'importSelectedFiles' | 'importSelectedFolder'> = {
   importSelectedFiles: vi.fn(),
+  importSelectedFolder: vi.fn(),
 }
 
 describe('useLibraryStore', () => {
@@ -60,5 +61,17 @@ describe('useLibraryStore', () => {
     const source = await readFile(fileURLToPath(new URL('./library.ts', import.meta.url)), 'utf8')
 
     expect(source).not.toContain('infrastructure/tauri')
+  })
+
+  it('imports a selected folder and refreshes tracks through injected application services', async () => {
+    vi.mocked(localMusicImportFacade.importSelectedFolder).mockResolvedValue([])
+    vi.mocked(repository.listTracks).mockResolvedValue([])
+    const { useLibraryStore } = await import('./library')
+    const store = useLibraryStore()
+
+    await store.importSelectedFolder()
+
+    expect(localMusicImportFacade.importSelectedFolder).toHaveBeenCalledOnce()
+    expect(repository.listTracks).toHaveBeenCalledOnce()
   })
 })

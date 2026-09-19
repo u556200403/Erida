@@ -16,7 +16,7 @@ describe('LibraryImportButton', () => {
   it('calls the supplied import action once and represents the pending state', async () => {
     const deferred = createDeferredPromise()
     const onImport = vi.fn(() => deferred.promise)
-    const wrapper = mount(ImportButton, { props: { onImport } })
+    const wrapper = mount(ImportButton, { props: { onImport, onImportFolder: vi.fn() } })
 
     await wrapper.get('button').trigger('click')
     await wrapper.get('button').trigger('click')
@@ -36,7 +36,7 @@ describe('LibraryImportButton', () => {
     const onImport = vi.fn()
       .mockRejectedValueOnce(new Error('Import failed'))
       .mockResolvedValueOnce(undefined)
-    const wrapper = mount(ImportButton, { props: { onImport } })
+    const wrapper = mount(ImportButton, { props: { onImport, onImportFolder: vi.fn() } })
 
     await wrapper.get('button').trigger('click')
     await flushPromises()
@@ -50,5 +50,24 @@ describe('LibraryImportButton', () => {
     expect(onImport).toHaveBeenCalledTimes(2)
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
     expect(wrapper.get('button').text()).toBe('Import music')
+  })
+
+  it('imports a folder and prevents selecting files while it is pending', async () => {
+    const deferred = createDeferredPromise()
+    const onImport = vi.fn()
+    const onImportFolder = vi.fn(() => deferred.promise)
+    const wrapper = mount(ImportButton, { props: { onImport, onImportFolder } })
+
+    const buttons = wrapper.findAll('button')
+    await buttons[1].trigger('click')
+    await buttons[0].trigger('click')
+
+    expect(onImportFolder).toHaveBeenCalledOnce()
+    expect(onImport).not.toHaveBeenCalled()
+    expect(buttons[0].attributes('disabled')).toBeDefined()
+    expect(buttons[1].attributes('disabled')).toBeDefined()
+
+    deferred.resolve()
+    await flushPromises()
   })
 })

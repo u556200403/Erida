@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { pickFiles, readMetadata, repositoryInstances } = vi.hoisted(() => ({
+const { pickFiles, pickFolder, readMetadata, repositoryInstances } = vi.hoisted(() => ({
   pickFiles: vi.fn(),
+  pickFolder: vi.fn(),
   readMetadata: vi.fn(),
   repositoryInstances: [] as Array<{
     tracks: unknown[]
@@ -13,6 +14,7 @@ const { pickFiles, readMetadata, repositoryInstances } = vi.hoisted(() => ({
 vi.mock('../infrastructure/tauri/tauri-local-music-file-picker', () => ({
   TauriLocalMusicFilePicker: class {
     pickFiles = pickFiles
+    pickFolder = pickFolder
   },
 }))
 
@@ -40,6 +42,11 @@ import { createMusicLibraryApplication } from './music-library-composition'
 import { TauriMusicLibraryRepository } from '../infrastructure/tauri/tauri-music-library-repository'
 
 describe('createMusicLibraryApplication', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    repositoryInstances.splice(0)
+  })
+
   it('uses a persistent Tauri repository shared by imports and library reads', async () => {
     pickFiles.mockResolvedValue([
       { locator: 'C:/Music/Afterglow.mp3', filename: 'Afterglow.mp3' },
@@ -50,7 +57,6 @@ describe('createMusicLibraryApplication', () => {
       album: null,
       durationSeconds: 212,
     })
-
     const { musicLibraryRepository, localMusicImportFacade } = createMusicLibraryApplication()
 
     expect(pickFiles).not.toHaveBeenCalled()
@@ -71,6 +77,38 @@ describe('createMusicLibraryApplication', () => {
     })
     expect(pickFiles).toHaveBeenCalledOnce()
     expect(readMetadata).toHaveBeenCalledOnce()
+    expect(repositoryInstances[0]?.addTrack).toHaveBeenCalledOnce()
+    expect(repositoryInstances[0]?.listTracks).toHaveBeenCalledOnce()
+  })
+
+  it('wires folder discovery into the same import pipeline and repository', async () => {
+    pickFolder.mockResolvedValue([
+      { locator: 'C:/Music/nested/Folder Track.wav', filename: 'Folder Track.wav' },
+    ])
+    readMetadata.mockResolvedValue({
+      title: null,
+      artist: null,
+      album: null,
+      durationSeconds: null,
+    })
+    const { musicLibraryRepository, localMusicImportFacade } = createMusicLibraryApplication()
+
+    expect(musicLibraryRepository).toBeInstanceOf(TauriMusicLibraryRepository)
+    expect(repositoryInstances).toHaveLength(1)
+    expect(repositoryInstances[0]).toBe(musicLibraryRepository)
+
+    await localMusicImportFacade.importSelectedFolder()
+
+    expect(pickFolder).toHaveBeenCalledOnce()
+    expect(readMetadata).toHaveBeenCalledOnce()
+    await expect(musicLibraryRepository.listTracks()).resolves.toContainEqual({
+      id: expect.any(String),
+      title: 'Folder Track',
+      artist: 'Unknown Artist',
+      album: null,
+      durationSeconds: null,
+      source: { kind: 'local', locator: 'C:/Music/nested/Folder Track.wav' },
+    })
     expect(repositoryInstances[0]?.addTrack).toHaveBeenCalledOnce()
     expect(repositoryInstances[0]?.listTracks).toHaveBeenCalledOnce()
   })

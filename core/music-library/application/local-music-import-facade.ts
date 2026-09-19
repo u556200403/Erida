@@ -15,6 +15,16 @@ export class LocalMusicImportFacade {
   async importSelectedFiles(): Promise<Track[]> {
     const files = await this.filePicker.pickFiles()
 
+    return this.importFiles(files)
+  }
+
+  async importSelectedFolder(): Promise<Track[]> {
+    const files = await this.filePicker.pickFolder()
+
+    return this.importFiles(files)
+  }
+
+  private async importFiles(files: readonly LocalMusicFile[]): Promise<Track[]> {
     if (files.length === 0) {
       return []
     }
