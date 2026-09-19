@@ -155,6 +155,13 @@ impl MusicLibraryStorage {
         Ok(())
     }
 
+    pub fn remove_track(&self, id: &str) -> Result<(), StorageError> {
+        self.connection
+            .execute("DELETE FROM tracks WHERE id = ?", params![id])?;
+
+        Ok(())
+    }
+
     pub fn list_tracks(&self) -> Result<Vec<LibraryTrackDto>, StorageError> {
         let mut statement = self.connection.prepare(
             "
@@ -226,6 +233,17 @@ pub async fn list_library_tracks(app: tauri::AppHandle) -> Result<Vec<LibraryTra
     tauri::async_runtime::spawn_blocking(move || {
         let storage = open_application_storage(&app)?;
         storage.list_tracks()
+    })
+    .await
+    .map_err(|error| format!("music library task failed: {error}"))?
+    .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub async fn remove_library_track(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let storage = open_application_storage(&app)?;
+        storage.remove_track(&id)
     })
     .await
     .map_err(|error| format!("music library task failed: {error}"))?
@@ -439,6 +457,25 @@ mod tests {
             storage.list_tracks().expect("tracks should list"),
             [first, second, third]
         );
+    }
+
+    #[test]
+    fn removing_a_track_deletes_only_its_library_record_and_ignores_missing_ids() {
+        let database = TemporaryDatabase::new();
+        let storage =
+            MusicLibraryStorage::open(database.path()).expect("database should initialize");
+        let removed = local_track("removed", "C:\\Music\\keep-this-file.mp3");
+        let retained = service_track("retained");
+
+        storage.add_track(&removed).expect("track should insert");
+        storage.add_track(&retained).expect("track should insert");
+
+        storage.remove_track(&removed.id).expect("track should remove");
+        storage
+            .remove_track("missing-track")
+            .expect("missing track removal should succeed");
+
+        assert_eq!(storage.list_tracks().expect("tracks should list"), [retained]);
     }
 
     #[test]

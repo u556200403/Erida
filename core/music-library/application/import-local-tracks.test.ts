@@ -6,8 +6,9 @@ import { ImportLocalTracks, titleFromFilename } from './import-local-tracks'
 describe('ImportLocalTracks', () => {
   it('converts a local music file into a local track and persists it', async () => {
     const repository: MusicLibraryRepository = {
-      listTracks: vi.fn(),
-      addTrack: vi.fn(),
+  listTracks: vi.fn(),
+  addTrack: vi.fn(),
+  removeTrack: vi.fn(),
     }
     const metadataReader: AudioMetadataReader = {
       read: vi.fn().mockResolvedValue({
@@ -42,8 +43,9 @@ describe('ImportLocalTracks', () => {
 
   it('uses fallback values when metadata is unavailable', async () => {
     const repository: MusicLibraryRepository = {
-      listTracks: vi.fn(),
-      addTrack: vi.fn(),
+  listTracks: vi.fn(),
+  addTrack: vi.fn(),
+  removeTrack: vi.fn(),
     }
     const metadataReader: AudioMetadataReader = {
       read: vi.fn().mockResolvedValue({
@@ -74,8 +76,9 @@ describe('ImportLocalTracks', () => {
 
   it('imports multiple files with deterministic generated IDs', async () => {
     const repository: MusicLibraryRepository = {
-      listTracks: vi.fn(),
-      addTrack: vi.fn(),
+  listTracks: vi.fn(),
+  addTrack: vi.fn(),
+  removeTrack: vi.fn(),
     }
     const generateTrackId = vi.fn()
       .mockReturnValueOnce('track-1')
@@ -103,8 +106,9 @@ describe('ImportLocalTracks', () => {
 
   it('falls back for a reader failure and continues importing later files', async () => {
     const repository: MusicLibraryRepository = {
-      listTracks: vi.fn(),
-      addTrack: vi.fn(),
+  listTracks: vi.fn(),
+  addTrack: vi.fn(),
+  removeTrack: vi.fn(),
     }
     const metadataReader: AudioMetadataReader = {
       read: vi

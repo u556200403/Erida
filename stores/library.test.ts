@@ -9,6 +9,7 @@ import type { LocalMusicImportFacade } from '~/core/music-library/application/lo
 const repository: MusicLibraryRepository = {
   listTracks: vi.fn(),
   addTrack: vi.fn(),
+  removeTrack: vi.fn(),
 }
 const localMusicImportFacade: Pick<LocalMusicImportFacade, 'importSelectedFiles' | 'importSelectedFolder' | 'importDroppedPaths'> = {
   importSelectedFiles: vi.fn(),
@@ -125,5 +126,68 @@ describe('useLibraryStore', () => {
     expect(store.isImporting).toBe(false)
     expect(store.importError).toBe('Unable to import music. Please try again.')
     expect(repository.listTracks).not.toHaveBeenCalled()
+  })
+
+  it('removes a track and refreshes the library through the repository', async () => {
+    vi.mocked(repository.removeTrack).mockResolvedValue(undefined)
+    vi.mocked(repository.listTracks).mockResolvedValue([])
+    const { useLibraryStore } = await import('./library')
+    const store = useLibraryStore()
+
+    await expect(store.removeTrack('track-4')).resolves.toBe(true)
+
+    expect(repository.removeTrack).toHaveBeenCalledWith('track-4')
+    expect(repository.listTracks).toHaveBeenCalledOnce()
+    expect(store.isRemoving).toBe(false)
+    expect(store.removeError).toBeNull()
+  })
+
+  it('does not report success when the library cannot resynchronize after removal', async () => {
+    vi.mocked(repository.removeTrack).mockResolvedValue(undefined)
+    vi.mocked(repository.listTracks).mockRejectedValue(new Error('SQLite is busy'))
+    const { useLibraryStore } = await import('./library')
+    const store = useLibraryStore()
+
+    await expect(store.removeTrack('track-4')).resolves.toBe(false)
+
+    expect(repository.removeTrack).toHaveBeenCalledWith('track-4')
+    expect(repository.listTracks).toHaveBeenCalledOnce()
+    expect(store.error).toBe('Unable to load library tracks.')
+    expect(store.isRemoving).toBe(false)
+    expect(store.removeError).toBeNull()
+  })
+
+  it('exposes a user-safe error and propagates a failed removal', async () => {
+    const error = new Error('SQLite is busy')
+    vi.mocked(repository.removeTrack).mockRejectedValue(error)
+    const { useLibraryStore } = await import('./library')
+    const store = useLibraryStore()
+
+    await expect(store.removeTrack('track-4')).rejects.toBe(error)
+
+    expect(store.isRemoving).toBe(false)
+    expect(store.removeError).toBe('Unable to remove track. Please try again.')
+    expect(repository.listTracks).not.toHaveBeenCalled()
+  })
+
+  it('prevents duplicate removals while a removal is running', async () => {
+    let resolveRemoval!: () => void
+    vi.mocked(repository.removeTrack).mockImplementation(() => new Promise<void>((resolve) => {
+      resolveRemoval = resolve
+    }))
+    vi.mocked(repository.listTracks).mockResolvedValue([])
+    const { useLibraryStore } = await import('./library')
+    const store = useLibraryStore()
+
+    const firstRemoval = store.removeTrack('track-4')
+    await Promise.resolve()
+
+    await expect(store.removeTrack('track-4')).resolves.toBe(false)
+    expect(repository.removeTrack).toHaveBeenCalledOnce()
+    expect(store.isRemoving).toBe(true)
+
+    resolveRemoval()
+    await expect(firstRemoval).resolves.toBe(true)
+    expect(store.isRemoving).toBe(false)
   })
 })

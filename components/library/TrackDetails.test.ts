@@ -41,4 +41,19 @@ describe('LibraryTrackDetails', () => {
 
     expect(wrapper.text()).not.toContain('Local path')
   })
+
+  it('emits remove when the removal button is clicked', async () => {
+    const wrapper = mount(TrackDetails, {
+      props: {
+        track: {
+          id: 'track-4', title: 'Afterglow', artist: 'Lumen', album: 'Aurora', duration: '3:32',
+          source: { kind: 'local', locator: 'C:/Music/Afterglow.mp3' },
+        },
+      },
+    })
+
+    await wrapper.get('button').trigger('click')
+
+    expect(wrapper.emitted('remove')).toEqual([[]])
+  })
 })
