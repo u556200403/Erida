@@ -1,4 +1,5 @@
 mod audio_metadata;
+mod local_music_file_discovery;
 mod music_library_storage;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -7,6 +8,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             audio_metadata::read_audio_metadata,
+            local_music_file_discovery::discover_audio_files,
             music_library_storage::add_library_track,
             music_library_storage::list_library_tracks,
         ])

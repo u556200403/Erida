@@ -17,7 +17,10 @@ useHead({ title: 'Library · Erida' })
         <h1 class="text-3xl font-semibold tracking-tight text-white">Library</h1>
         <p class="mt-2 text-slate-400">{{ library.trackCount }} tracks in your library.</p>
       </div>
-      <LibraryImportButton :on-import="library.importSelectedFiles" />
+      <LibraryImportButton
+        :on-import="library.importSelectedFiles"
+        :on-import-folder="library.importSelectedFolder"
+      />
     </div>
 
     <div class="mt-8">

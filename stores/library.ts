@@ -49,5 +49,19 @@ export const useLibraryStore = defineStore('library', () => {
     await loadTracks()
   }
 
-  return { tracks, playlists, trackCount, isLoading, error, loadTracks, importSelectedFiles }
+  async function importSelectedFolder(): Promise<void> {
+    await localMusicImportFacade.importSelectedFolder()
+    await loadTracks()
+  }
+
+  return {
+    tracks,
+    playlists,
+    trackCount,
+    isLoading,
+    error,
+    loadTracks,
+    importSelectedFiles,
+    importSelectedFolder,
+  }
 })
