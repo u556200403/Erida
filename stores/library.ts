@@ -11,6 +11,7 @@ function toLibraryTrackRow(track: Track): LibraryTrackRow {
     duration: track.durationSeconds === null
       ? '—'
       : `${Math.floor(track.durationSeconds / 60)}:${String(track.durationSeconds % 60).padStart(2, '0')}`,
+    source: track.source,
   }
 }
 

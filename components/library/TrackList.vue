@@ -19,7 +19,14 @@ defineProps<{
       </thead>
       <tbody class="divide-y divide-slate-800">
         <tr v-for="track in tracks" :key="track.id" class="bg-slate-900/50 text-slate-200">
-          <td class="px-4 py-3 font-medium text-white">{{ track.title }}</td>
+          <td class="px-4 py-3 font-medium text-white">
+            <NuxtLink
+              :to="{ name: 'tracks-id', params: { id: track.id } }"
+              class="transition hover:text-violet-300"
+            >
+              {{ track.title }}
+            </NuxtLink>
+          </td>
           <td class="hidden px-4 py-3 sm:table-cell">{{ track.artist }}</td>
           <td class="hidden px-4 py-3 text-slate-400 md:table-cell">{{ track.album }}</td>
           <td class="px-4 py-3 text-right text-slate-400">{{ track.duration }}</td>

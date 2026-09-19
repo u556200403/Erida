@@ -55,6 +55,7 @@ describe('useLibraryStore', () => {
       artist: 'Lumen',
       album: '—',
       duration: '3:32',
+      source: { kind: 'local', locator: 'C:/Music/Afterglow.mp3' },
     }])
   })
 
