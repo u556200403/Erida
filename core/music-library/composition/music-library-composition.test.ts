@@ -60,6 +60,7 @@ vi.mock('../infrastructure/tauri/tauri-music-library-repository', () => ({
 
 import { createMusicLibraryApplication } from './music-library-composition'
 import { TauriMusicLibraryRepository } from '../infrastructure/tauri/tauri-music-library-repository'
+import { TauriArtworkUrlResolver } from '../infrastructure/tauri/tauri-artwork-url-resolver'
 
 describe('createMusicLibraryApplication', () => {
   beforeEach(() => {
@@ -78,11 +79,12 @@ describe('createMusicLibraryApplication', () => {
       durationSeconds: 212,
       artworkRef: null,
     })
-    const { musicLibraryRepository, localMusicImportFacade } = createMusicLibraryApplication()
+    const { musicLibraryRepository, localMusicImportFacade, artworkUrlResolver } = createMusicLibraryApplication()
 
     expect(pickFiles).not.toHaveBeenCalled()
     expect(readMetadata).not.toHaveBeenCalled()
     expect(musicLibraryRepository).toBeInstanceOf(TauriMusicLibraryRepository)
+    expect(artworkUrlResolver).toBeInstanceOf(TauriArtworkUrlResolver)
     expect(repositoryInstances).toHaveLength(1)
     expect(repositoryInstances[0]).toBe(musicLibraryRepository)
 

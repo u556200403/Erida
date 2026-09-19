@@ -5,6 +5,7 @@ import { computed, ref } from 'vue'
 import { createPinia, defineStore, setActivePinia } from 'pinia'
 import type { MusicLibraryRepository } from '~/core/music-library/domain/music-library-repository'
 import type { LocalMusicImportFacade } from '~/core/music-library/application/local-music-import-facade'
+import type { ArtworkUrlResolver } from '~/core/music-library/application/artwork-url-resolver'
 
 const repository: MusicLibraryRepository = {
   listTracks: vi.fn(),
@@ -15,6 +16,9 @@ const localMusicImportFacade: Pick<LocalMusicImportFacade, 'importSelectedFiles'
   importSelectedFiles: vi.fn(),
   importSelectedFolder: vi.fn(),
   importDroppedPaths: vi.fn(),
+}
+const artworkUrlResolver: ArtworkUrlResolver = {
+  resolve: vi.fn(),
 }
 
 describe('useLibraryStore', () => {
@@ -28,10 +32,13 @@ describe('useLibraryStore', () => {
     vi.stubGlobal('useNuxtApp', () => ({
       $musicLibraryRepository: repository,
       $localMusicImportFacade: localMusicImportFacade,
+      $artworkUrlResolver: artworkUrlResolver,
     }))
+    vi.mocked(artworkUrlResolver.resolve).mockResolvedValue(null)
   })
 
   it('imports selected files and refreshes tracks through the injected repository', async () => {
+    vi.mocked(artworkUrlResolver.resolve).mockResolvedValue('asset://track-4.jpg')
     vi.mocked(localMusicImportFacade.importSelectedFiles).mockResolvedValue([])
     vi.mocked(repository.listTracks).mockResolvedValue([
       {
@@ -40,6 +47,7 @@ describe('useLibraryStore', () => {
         artist: 'Lumen',
         album: null,
         durationSeconds: 212,
+        artworkRef: 'embedded/track-4.jpg',
         source: { kind: 'local', locator: 'C:/Music/Afterglow.mp3' },
       },
     ])
@@ -50,12 +58,14 @@ describe('useLibraryStore', () => {
 
     expect(localMusicImportFacade.importSelectedFiles).toHaveBeenCalledOnce()
     expect(repository.listTracks).toHaveBeenCalledOnce()
+    expect(artworkUrlResolver.resolve).toHaveBeenCalledWith('embedded/track-4.jpg')
     expect(store.tracks).toEqual([{
       id: 'track-4',
       title: 'Afterglow',
       artist: 'Lumen',
       album: '—',
       duration: '3:32',
+      artworkUrl: 'asset://track-4.jpg',
       source: { kind: 'local', locator: 'C:/Music/Afterglow.mp3' },
     }])
   })
@@ -64,6 +74,53 @@ describe('useLibraryStore', () => {
     const source = await readFile(fileURLToPath(new URL('./library.ts', import.meta.url)), 'utf8')
 
     expect(source).not.toContain('infrastructure/tauri')
+  })
+
+  it('keeps the latest library load state when an older artwork resolution finishes later', async () => {
+    let rejectOlderArtwork!: (reason?: unknown) => void
+    let resolveLatestArtwork!: (artworkUrl: string | null) => void
+    const olderArtwork = new Promise<string | null>((_, reject) => {
+      rejectOlderArtwork = reject
+    })
+    const latestArtwork = new Promise<string | null>((resolve) => {
+      resolveLatestArtwork = resolve
+    })
+    vi.mocked(repository.listTracks)
+      .mockResolvedValueOnce([{
+        id: 'older-track', title: 'Older', artist: 'Lumen', album: null, durationSeconds: 120,
+        artworkRef: 'embedded/older-track.jpg', source: { kind: 'local', locator: 'C:/Music/Older.mp3' },
+      }])
+      .mockResolvedValueOnce([{
+        id: 'latest-track', title: 'Latest', artist: 'Lumen', album: null, durationSeconds: 180,
+        artworkRef: 'embedded/latest-track.jpg', source: { kind: 'local', locator: 'C:/Music/Latest.mp3' },
+      }])
+    vi.mocked(artworkUrlResolver.resolve).mockImplementation((artworkRef) => {
+      return artworkRef === 'embedded/older-track.jpg' ? olderArtwork : latestArtwork
+    })
+    const { useLibraryStore } = await import('./library')
+    const store = useLibraryStore()
+
+    const olderLoad = store.loadTracks()
+    await Promise.resolve()
+    const latestLoad = store.loadTracks()
+    await Promise.resolve()
+
+    rejectOlderArtwork(new Error('stale artwork lookup failed'))
+    await expect(olderLoad).resolves.toBe(false)
+
+    expect(store.isLoading).toBe(true)
+    expect(store.error).toBeNull()
+    expect(store.tracks).toEqual([])
+
+    resolveLatestArtwork('asset://latest-track.jpg')
+    await expect(latestLoad).resolves.toBe(true)
+
+    expect(store.isLoading).toBe(false)
+    expect(store.error).toBeNull()
+    expect(store.tracks).toMatchObject([{
+      id: 'latest-track',
+      artworkUrl: 'asset://latest-track.jpg',
+    }])
   })
 
   it('imports a selected folder and refreshes tracks through injected application services', async () => {

@@ -13,6 +13,7 @@ describe('LibraryTrackList', () => {
           artist: 'Lumen',
           album: 'Aurora',
           duration: '3:32',
+          artworkUrl: null,
           source: { kind: 'local', locator: 'C:/Music/Afterglow.mp3' },
         }],
       },

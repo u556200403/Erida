@@ -2,7 +2,7 @@ import type { Track } from '~/core/music-library/domain/track'
 import type { LibraryTrackRow } from '~/types/library'
 import type { Playlist } from '~/types/music'
 
-function toLibraryTrackRow(track: Track): LibraryTrackRow {
+function toLibraryTrackRow(track: Track, artworkUrl: string | null): LibraryTrackRow {
   return {
     id: track.id,
     title: track.title,
@@ -11,6 +11,7 @@ function toLibraryTrackRow(track: Track): LibraryTrackRow {
     duration: track.durationSeconds === null
       ? '—'
       : `${Math.floor(track.durationSeconds / 60)}:${String(track.durationSeconds % 60).padStart(2, '0')}`,
+    artworkUrl,
     source: track.source,
   }
 }
@@ -19,6 +20,7 @@ export const useLibraryStore = defineStore('library', () => {
   const {
     $musicLibraryRepository: musicLibraryRepository,
     $localMusicImportFacade: localMusicImportFacade,
+    $artworkUrlResolver: artworkUrlResolver,
   } = useNuxtApp()
   const tracks = ref<LibraryTrackRow[]>([])
   const isLoading = ref(false)
@@ -27,6 +29,7 @@ export const useLibraryStore = defineStore('library', () => {
   const error = ref<string | null>(null)
   const importError = ref<string | null>(null)
   const removeError = ref<string | null>(null)
+  let latestLoadRequest = 0
 
   const playlists = ref<Playlist[]>([
     { id: '1', name: 'Late night', trackCount: 24, description: 'Music for quiet evenings.' },
@@ -36,18 +39,29 @@ export const useLibraryStore = defineStore('library', () => {
   const trackCount = computed(() => tracks.value.length)
 
   async function loadTracks(): Promise<boolean> {
+    const request = ++latestLoadRequest
     isLoading.value = true
     error.value = null
 
     try {
       const libraryTracks = await musicLibraryRepository.listTracks()
-      tracks.value = libraryTracks.map(toLibraryTrackRow)
+      const rows = await Promise.all(libraryTracks.map(async (track) => {
+        const artworkUrl = await artworkUrlResolver.resolve(track.artworkRef)
+        return toLibraryTrackRow(track, artworkUrl)
+      }))
+      if (request === latestLoadRequest) {
+        tracks.value = rows
+      }
       return true
     } catch {
-      error.value = 'Unable to load library tracks.'
+      if (request === latestLoadRequest) {
+        error.value = 'Unable to load library tracks.'
+      }
       return false
     } finally {
-      isLoading.value = false
+      if (request === latestLoadRequest) {
+        isLoading.value = false
+      }
     }
   }
 

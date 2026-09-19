@@ -6,5 +6,6 @@ export interface LibraryTrackRow {
   artist: string
   album: string
   duration: string
+  artworkUrl: string | null
   source: TrackSource
 }
