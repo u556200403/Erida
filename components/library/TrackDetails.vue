@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import type { LibraryTrackRow } from '~/types/library'
 
-defineProps<{
+const props = defineProps<{
   track: LibraryTrackRow
   isRemoving?: boolean
 }>()
@@ -9,12 +10,33 @@ defineProps<{
 const emit = defineEmits<{
   remove: []
 }>()
+
+const artworkUrl = ref(props.track.artworkUrl)
+
+watch(() => [props.track.id, props.track.artworkUrl], ([, nextArtworkUrl]) => {
+  artworkUrl.value = nextArtworkUrl
+})
 </script>
 
 <template>
   <section>
     <p class="text-sm font-medium text-violet-400">Track details</p>
     <h1 class="mt-2 text-3xl font-semibold tracking-tight text-white">{{ track.title }}</h1>
+
+    <img
+      v-if="artworkUrl"
+      :src="artworkUrl"
+      :alt="`Artwork for ${track.title}`"
+      class="mt-6 size-40 rounded-lg border border-slate-800 object-cover"
+      @error="artworkUrl = null"
+    >
+    <div
+      v-else
+      class="mt-6 flex size-40 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-center text-xs text-slate-400"
+      data-testid="artwork-placeholder"
+    >
+      Artwork unavailable
+    </div>
 
     <dl class="mt-8 grid gap-5 text-sm sm:grid-cols-2">
       <div>
