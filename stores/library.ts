@@ -21,7 +21,9 @@ export const useLibraryStore = defineStore('library', () => {
   } = useNuxtApp()
   const tracks = ref<LibraryTrackRow[]>([])
   const isLoading = ref(false)
+  const isImporting = ref(false)
   const error = ref<string | null>(null)
+  const importError = ref<string | null>(null)
 
   const playlists = ref<Playlist[]>([
     { id: '1', name: 'Late night', trackCount: 24, description: 'Music for quiet evenings.' },
@@ -45,13 +47,33 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   async function importSelectedFiles(): Promise<void> {
-    await localMusicImportFacade.importSelectedFiles()
-    await loadTracks()
+    await runImport(() => localMusicImportFacade.importSelectedFiles())
   }
 
   async function importSelectedFolder(): Promise<void> {
-    await localMusicImportFacade.importSelectedFolder()
-    await loadTracks()
+    await runImport(() => localMusicImportFacade.importSelectedFolder())
+  }
+
+  async function importDroppedPaths(paths: readonly string[]): Promise<void> {
+    await runImport(() => localMusicImportFacade.importDroppedPaths(paths))
+  }
+
+  async function runImport(action: () => Promise<unknown>): Promise<void> {
+    if (isImporting.value) {
+      return
+    }
+
+    isImporting.value = true
+    importError.value = null
+
+    try {
+      await action()
+      await loadTracks()
+    } catch {
+      importError.value = 'Unable to import music. Please try again.'
+    } finally {
+      isImporting.value = false
+    }
   }
 
   return {
@@ -59,9 +81,12 @@ export const useLibraryStore = defineStore('library', () => {
     playlists,
     trackCount,
     isLoading,
+    isImporting,
     error,
+    importError,
     loadTracks,
     importSelectedFiles,
     importSelectedFolder,
+    importDroppedPaths,
   }
 })

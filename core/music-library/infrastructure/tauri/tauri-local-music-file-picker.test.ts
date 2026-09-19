@@ -45,7 +45,7 @@ describe('TauriLocalMusicFilePicker', () => {
   })
 
   it('returns no files when folder selection is cancelled', async () => {
-    const discover = vi.fn()
+    const discover = { discover: vi.fn() }
     const picker = new TauriLocalMusicFilePicker(
       vi.fn(),
       vi.fn().mockResolvedValue(null),
@@ -54,7 +54,7 @@ describe('TauriLocalMusicFilePicker', () => {
 
     await expect(picker.pickFolder()).resolves.toEqual([])
 
-    expect(discover).not.toHaveBeenCalled()
+    expect(discover.discover).not.toHaveBeenCalled()
   })
 
   it('uses the folder dialog and returns native discovery results unchanged', async () => {
@@ -62,13 +62,13 @@ describe('TauriLocalMusicFilePicker', () => {
       { locator: 'C:\\Music\\nested\\First.MP3', filename: 'First.MP3' },
     ]
     const openFolderDialog = vi.fn().mockResolvedValue('C:\\Music')
-    const discover = vi.fn().mockResolvedValue(files)
+    const discover = { discover: vi.fn().mockResolvedValue(files) }
     const picker = new TauriLocalMusicFilePicker(vi.fn(), openFolderDialog, discover)
 
     await expect(picker.pickFolder()).resolves.toBe(files)
 
     expect(openFolderDialog).toHaveBeenCalledWith({ multiple: false, directory: true })
-    expect(discover).toHaveBeenCalledWith('discover_audio_files', { directory: 'C:\\Music' })
+    expect(discover.discover).toHaveBeenCalledWith(['C:\\Music'])
   })
 
   it('propagates native folder traversal errors', async () => {
@@ -76,7 +76,7 @@ describe('TauriLocalMusicFilePicker', () => {
     const picker = new TauriLocalMusicFilePicker(
       vi.fn(),
       vi.fn().mockResolvedValue('C:\\Music'),
-      vi.fn().mockRejectedValue(error),
+      { discover: vi.fn().mockRejectedValue(error) },
     )
 
     await expect(picker.pickFolder()).rejects.toBe(error)

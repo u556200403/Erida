@@ -1,5 +1,6 @@
 import type { Track } from '../domain/track'
 import type { LocalMusicFile } from './local-music-file'
+import type { LocalMusicFileDiscovery } from './local-music-file-discovery'
 import type { LocalMusicFilePicker } from './local-music-file-picker'
 
 export interface LocalTracksImporter {
@@ -9,6 +10,7 @@ export interface LocalTracksImporter {
 export class LocalMusicImportFacade {
   constructor(
     private readonly filePicker: LocalMusicFilePicker,
+    private readonly fileDiscovery: LocalMusicFileDiscovery,
     private readonly importLocalTracks: LocalTracksImporter,
   ) {}
 
@@ -20,6 +22,12 @@ export class LocalMusicImportFacade {
 
   async importSelectedFolder(): Promise<Track[]> {
     const files = await this.filePicker.pickFolder()
+
+    return this.importFiles(files)
+  }
+
+  async importDroppedPaths(paths: readonly string[]): Promise<Track[]> {
+    const files = await this.fileDiscovery.discover(paths)
 
     return this.importFiles(files)
   }

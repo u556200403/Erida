@@ -1,7 +1,8 @@
 import { open, type OpenDialogOptions } from '@tauri-apps/plugin-dialog'
-import { invoke } from '@tauri-apps/api/core'
+import type { LocalMusicFileDiscovery } from '../../application/local-music-file-discovery'
 import type { LocalMusicFilePicker } from '../../application/local-music-file-picker'
 import type { LocalMusicFile } from '../../application/local-music-file'
+import { TauriLocalMusicFileDiscovery } from './tauri-local-music-file-discovery'
 
 const audioFileDialogOptions: OpenDialogOptions = {
   multiple: true,
@@ -16,8 +17,6 @@ const audioFileDialogOptions: OpenDialogOptions = {
 
 type OpenDialog = (options: OpenDialogOptions) => Promise<string[] | null>
 type OpenFolderDialog = (options: OpenDialogOptions) => Promise<string | null>
-type Invoke = <T>(command: string, args?: Record<string, unknown>) => Promise<T>
-
 const openAudioFileDialog: OpenDialog = async (options) => {
   return open({ ...options, multiple: true, directory: false })
 }
@@ -36,7 +35,7 @@ export class TauriLocalMusicFilePicker implements LocalMusicFilePicker {
   constructor(
     private readonly openDialog: OpenDialog = openAudioFileDialog,
     private readonly openFolderDialog: OpenFolderDialog = openMusicFolderDialog,
-    private readonly invokeFn: Invoke = invoke,
+    private readonly fileDiscovery: LocalMusicFileDiscovery = new TauriLocalMusicFileDiscovery(),
   ) {}
 
   async pickFiles(): Promise<readonly LocalMusicFile[]> {
@@ -55,6 +54,6 @@ export class TauriLocalMusicFilePicker implements LocalMusicFilePicker {
       return []
     }
 
-    return this.invokeFn<LocalMusicFile[]>('discover_audio_files', { directory: path })
+    return this.fileDiscovery.discover([path])
   }
 }

@@ -11,8 +11,17 @@ const { pickFiles, pickFolder, readMetadata, repositoryInstances } = vi.hoisted(
   }>,
 }))
 
+const discover = vi.hoisted(() => vi.fn())
+
+vi.mock('../infrastructure/tauri/tauri-local-music-file-discovery', () => ({
+  TauriLocalMusicFileDiscovery: class {
+    discover = discover
+  },
+}))
+
 vi.mock('../infrastructure/tauri/tauri-local-music-file-picker', () => ({
   TauriLocalMusicFilePicker: class {
+    constructor(_: unknown, __: unknown, private readonly discovery: { discover: typeof discover }) {}
     pickFiles = pickFiles
     pickFolder = pickFolder
   },
@@ -111,5 +120,31 @@ describe('createMusicLibraryApplication', () => {
     })
     expect(repositoryInstances[0]?.addTrack).toHaveBeenCalledOnce()
     expect(repositoryInstances[0]?.listTracks).toHaveBeenCalledOnce()
+  })
+
+  it('wires dropped paths through discovery and the existing importer', async () => {
+    discover.mockResolvedValue([
+      { locator: 'C:/Music/Album/Drop Track.m4a', filename: 'Drop Track.m4a' },
+    ])
+    readMetadata.mockResolvedValue({
+      title: 'Drop Track',
+      artist: 'Lumen',
+      album: null,
+      durationSeconds: 190,
+    })
+    const { musicLibraryRepository, localMusicImportFacade } = createMusicLibraryApplication()
+
+    await localMusicImportFacade.importDroppedPaths(['C:/Music/Album', 'C:/Music/ignored.txt'])
+
+    expect(discover).toHaveBeenCalledWith(['C:/Music/Album', 'C:/Music/ignored.txt'])
+    expect(readMetadata).toHaveBeenCalledOnce()
+    await expect(musicLibraryRepository.listTracks()).resolves.toContainEqual({
+      id: expect.any(String),
+      title: 'Drop Track',
+      artist: 'Lumen',
+      album: null,
+      durationSeconds: 190,
+      source: { kind: 'local', locator: 'C:/Music/Album/Drop Track.m4a' },
+    })
   })
 })
