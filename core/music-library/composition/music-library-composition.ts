@@ -1,9 +1,9 @@
 import { ImportLocalTracks, type TrackIdGenerator } from '../application/import-local-tracks'
 import { LocalMusicImportFacade } from '../application/local-music-import-facade'
 import type { MusicLibraryRepository } from '../domain/music-library-repository'
-import { InMemoryMusicLibraryRepository } from '../infrastructure/in-memory-music-library-repository'
 import { TauriAudioMetadataReader } from '../infrastructure/tauri/tauri-audio-metadata-reader'
 import { TauriLocalMusicFilePicker } from '../infrastructure/tauri/tauri-local-music-file-picker'
+import { TauriMusicLibraryRepository } from '../infrastructure/tauri/tauri-music-library-repository'
 
 export interface MusicLibraryApplication {
   musicLibraryRepository: MusicLibraryRepository
@@ -11,7 +11,7 @@ export interface MusicLibraryApplication {
 }
 
 export function createMusicLibraryApplication(): MusicLibraryApplication {
-  const musicLibraryRepository = new InMemoryMusicLibraryRepository()
+  const musicLibraryRepository = new TauriMusicLibraryRepository()
   const filePicker = new TauriLocalMusicFilePicker()
   const metadataReader = new TauriAudioMetadataReader()
   const generateTrackId: TrackIdGenerator = () => crypto.randomUUID()
