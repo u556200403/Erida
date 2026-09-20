@@ -27,11 +27,19 @@ useHead({ title: 'Library · Erida' })
       </div>
 
       <div class="mt-8">
-        <p v-if="library.error" class="text-slate-400" role="alert">
-          Unable to load your library. Please try again.
-        </p>
+        <LibraryLoadingState v-if="library.isLoading && !library.hasLoaded" />
+        <LibraryLoadErrorState
+          v-else-if="library.error && !library.hasLoaded"
+          :is-loading="library.isLoading"
+          :on-retry="library.loadTracks"
+        />
         <LibraryEmptyState v-else-if="library.tracks.length === 0" />
-        <LibraryTrackList v-else :tracks="library.tracks" />
+        <template v-else>
+          <p v-if="library.error" class="mb-4 text-red-400" role="alert">
+            Unable to load your library. Please try again.
+          </p>
+          <LibraryTrackList :tracks="library.tracks" />
+        </template>
       </div>
     </section>
   </LibraryDropArea>

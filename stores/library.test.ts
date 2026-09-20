@@ -74,6 +74,20 @@ describe('useLibraryStore', () => {
     }])
   })
 
+  it('starts in an explicit initial loading state and marks a successful load as complete', async () => {
+    vi.mocked(repository.listTracks).mockResolvedValue([])
+    const { useLibraryStore } = await import('./library')
+    const store = useLibraryStore()
+
+    expect(store.isLoading).toBe(true)
+    expect(store.hasLoaded).toBe(false)
+
+    await expect(store.loadTracks()).resolves.toBe(true)
+
+    expect(store.isLoading).toBe(false)
+    expect(store.hasLoaded).toBe(true)
+  })
+
   it('does not depend on Tauri infrastructure adapters', async () => {
     const source = await readFile(fileURLToPath(new URL('./library.ts', import.meta.url)), 'utf8')
 
@@ -187,6 +201,41 @@ describe('useLibraryStore', () => {
     expect(store.isImporting).toBe(false)
     expect(store.importError).toBe('Unable to import music. Please try again.')
     expect(repository.listTracks).not.toHaveBeenCalled()
+  })
+
+  it('keeps loaded tracks visible when a later import fails', async () => {
+    vi.mocked(repository.listTracks).mockResolvedValue([{
+      id: 'track-4', title: 'Afterglow', artist: 'Lumen', album: null, durationSeconds: 212,
+      artworkRef: null, source: { kind: 'local', locator: 'C:/Music/Afterglow.mp3' },
+    }])
+    vi.mocked(localMusicImportFacade.importSelectedFiles).mockRejectedValue(new Error('Picker failed'))
+    const { useLibraryStore } = await import('./library')
+    const store = useLibraryStore()
+
+    await store.loadTracks()
+    await store.importSelectedFiles()
+
+    expect(store.tracks).toMatchObject([{ id: 'track-4', title: 'Afterglow' }])
+    expect(store.error).toBeNull()
+    expect(store.importError).toBe('Unable to import music. Please try again.')
+  })
+
+  it('keeps loaded tracks when a later library refresh fails', async () => {
+    vi.mocked(repository.listTracks)
+      .mockResolvedValueOnce([{
+        id: 'track-4', title: 'Afterglow', artist: 'Lumen', album: null, durationSeconds: 212,
+        artworkRef: null, source: { kind: 'local', locator: 'C:/Music/Afterglow.mp3' },
+      }])
+      .mockRejectedValueOnce(new Error('SQLite is busy'))
+    const { useLibraryStore } = await import('./library')
+    const store = useLibraryStore()
+
+    await store.loadTracks()
+    await expect(store.loadTracks()).resolves.toBe(false)
+
+    expect(store.tracks).toMatchObject([{ id: 'track-4', title: 'Afterglow' }])
+    expect(store.hasLoaded).toBe(true)
+    expect(store.error).toBe('Unable to load library tracks.')
   })
 
   it('removes a track and refreshes the library through the repository', async () => {
