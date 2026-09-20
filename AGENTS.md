@@ -50,3 +50,26 @@ Before making large changes:
 - Explain plans, decisions, warnings, and results in Russian.
 - Keep code, variable names, function names, file names, Git commit messages, and technical identifiers in English.
 - Code comments should be in English unless explicitly requested otherwise.
+
+## Project knowledge
+
+Project documentation is stored in:
+
+docs/obsidian/
+
+Before implementing a feature, read:
+
+- docs/obsidian/00 - Project/Erida.md
+- docs/obsidian/03 - Development/Current State.md
+- docs/obsidian/03 - Development/Next Steps.md
+
+Read relevant architecture and feature notes when necessary.
+
+After completing a meaningful development task:
+
+1. Update Current State.md.
+2. Update the corresponding feature note.
+3. Record important architectural decisions as an ADR.
+4. Update Next Steps.md if development priorities changed.
+
+Do not change documented architectural decisions silently.
