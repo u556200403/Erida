@@ -5,6 +5,7 @@ import type { MusicLibraryRepository } from '../domain/music-library-repository'
 import { TauriAudioMetadataReader } from '../infrastructure/tauri/tauri-audio-metadata-reader'
 import { TauriArtworkUrlResolver } from '../infrastructure/tauri/tauri-artwork-url-resolver'
 import { TauriEmbeddedArtworkExtractor } from '../infrastructure/tauri/tauri-embedded-artwork-extractor'
+import { TauriLocalArtworkExtractor } from '../infrastructure/tauri/tauri-local-artwork-extractor'
 import { TauriLocalMusicFileDiscovery } from '../infrastructure/tauri/tauri-local-music-file-discovery'
 import { TauriLocalMusicFilePicker } from '../infrastructure/tauri/tauri-local-music-file-picker'
 import { TauriMusicLibraryRepository } from '../infrastructure/tauri/tauri-music-library-repository'
@@ -21,12 +22,14 @@ export function createMusicLibraryApplication(): MusicLibraryApplication {
   const filePicker = new TauriLocalMusicFilePicker(undefined, undefined, fileDiscovery)
   const metadataReader = new TauriAudioMetadataReader()
   const artworkExtractor = new TauriEmbeddedArtworkExtractor()
+  const localArtworkExtractor = new TauriLocalArtworkExtractor()
   const artworkUrlResolver = new TauriArtworkUrlResolver()
   const generateTrackId: TrackIdGenerator = () => crypto.randomUUID()
   const importLocalTracks = new ImportLocalTracks(
     musicLibraryRepository,
     metadataReader,
     artworkExtractor,
+    localArtworkExtractor,
     generateTrackId,
   )
 

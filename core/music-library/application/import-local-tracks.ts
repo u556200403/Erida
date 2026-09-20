@@ -2,6 +2,7 @@ import type { MusicLibraryRepository } from '../domain/music-library-repository'
 import type { Track, TrackId } from '../domain/track'
 import type { AudioMetadata, AudioMetadataReader } from './audio-metadata-reader'
 import type { EmbeddedArtworkExtractor } from './embedded-artwork-extractor'
+import type { LocalArtworkExtractor } from './local-artwork-extractor'
 import type { LocalMusicFile } from './local-music-file'
 
 export type TrackIdGenerator = () => TrackId
@@ -25,6 +26,7 @@ export class ImportLocalTracks {
     private readonly repository: MusicLibraryRepository,
     private readonly metadataReader: AudioMetadataReader,
     private readonly artworkExtractor: EmbeddedArtworkExtractor,
+    private readonly localArtworkExtractor: LocalArtworkExtractor,
     private readonly generateTrackId: TrackIdGenerator,
   ) {}
 
@@ -62,8 +64,21 @@ export class ImportLocalTracks {
   }
 
   private async extractArtwork(file: LocalMusicFile, trackId: TrackId): Promise<Track['artworkRef']> {
+    const embeddedArtwork = await this.extractWithFallback(this.artworkExtractor, file, trackId)
+    if (typeof embeddedArtwork === 'string') {
+      return embeddedArtwork
+    }
+
+    return this.extractWithFallback(this.localArtworkExtractor, file, trackId)
+  }
+
+  private async extractWithFallback(
+    extractor: EmbeddedArtworkExtractor | LocalArtworkExtractor,
+    file: LocalMusicFile,
+    trackId: TrackId,
+  ): Promise<Track['artworkRef']> {
     try {
-      return await this.artworkExtractor.extract(file, trackId)
+      return await extractor.extract(file, trackId)
     } catch {
       return null
     }

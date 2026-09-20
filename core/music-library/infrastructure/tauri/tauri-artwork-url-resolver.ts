@@ -4,7 +4,7 @@ import type { ArtworkUrlResolver } from '../../application/artwork-url-resolver'
 import type { ArtworkRef } from '../../domain/track'
 
 const EMBEDDED_ARTWORK_REF = /^embedded\/[A-Za-z0-9_-]+\.(?:jpg|jpeg|png|gif|bmp)$/
-const EMBEDDED_ARTWORK_PREFIX = 'embedded/'
+const LOCAL_ARTWORK_REF = /^local\/[A-Za-z0-9_-]+\.(?:jpg|png)$/
 
 type IsTauri = () => boolean
 type AppDataDir = () => Promise<string>
@@ -13,6 +13,10 @@ type ConvertFileSrc = (filePath: string) => string
 
 export function isValidEmbeddedArtworkRef(artworkRef: string): boolean {
   return EMBEDDED_ARTWORK_REF.test(artworkRef)
+}
+
+export function isValidArtworkRef(artworkRef: string): boolean {
+  return isValidEmbeddedArtworkRef(artworkRef) || LOCAL_ARTWORK_REF.test(artworkRef)
 }
 
 export class TauriArtworkUrlResolver implements ArtworkUrlResolver {
@@ -24,7 +28,7 @@ export class TauriArtworkUrlResolver implements ArtworkUrlResolver {
   ) {}
 
   async resolve(artworkRef: ArtworkRef | null): Promise<string | null> {
-    if (artworkRef === null || !isValidEmbeddedArtworkRef(artworkRef)) {
+    if (artworkRef === null || !isValidArtworkRef(artworkRef)) {
       return null
     }
 
@@ -33,11 +37,11 @@ export class TauriArtworkUrlResolver implements ArtworkUrlResolver {
         return null
       }
 
-      const filename = artworkRef.slice(EMBEDDED_ARTWORK_PREFIX.length)
+      const [kind, filename] = artworkRef.split('/')
       const artworkPath = await this.joinFn(
         await this.appDataDirFn(),
         'artwork',
-        'embedded',
+        kind,
         filename,
       )
 

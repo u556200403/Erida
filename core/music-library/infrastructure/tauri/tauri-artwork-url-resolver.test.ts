@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   isValidEmbeddedArtworkRef,
+  isValidArtworkRef,
   TauriArtworkUrlResolver,
 } from './tauri-artwork-url-resolver'
 
@@ -29,6 +30,23 @@ describe('isValidEmbeddedArtworkRef', () => {
     'embedded/track.JPG',
   ])('rejects unsafe ref %s', (artworkRef) => {
     expect(isValidEmbeddedArtworkRef(artworkRef)).toBe(false)
+  })
+})
+
+describe('isValidArtworkRef', () => {
+  it.each(['local/track_1-A.jpg', 'local/track_1-A.png'])('accepts a strict local artwork ref %s', (artworkRef) => {
+    expect(isValidArtworkRef(artworkRef)).toBe(true)
+  })
+
+  it.each([
+    'local/track.jpeg',
+    'local/track.gif',
+    'local/track.JPG',
+    'local/../track.jpg',
+    'local/album/track.jpg',
+    'local/track.jpg?size=1',
+  ])('rejects an unsafe local artwork ref %s', (artworkRef) => {
+    expect(isValidArtworkRef(artworkRef)).toBe(false)
   })
 })
 
@@ -69,6 +87,18 @@ describe('TauriArtworkUrlResolver', () => {
       'track-1.png',
     )
     expect(convertFileSrc).toHaveBeenCalledWith('C:/AppData/com.erida.desktop/artwork/embedded/track-1.png')
+  })
+
+  it('resolves a validated local ref from its separate cache directory', async () => {
+    const appDataDir = vi.fn().mockResolvedValue('C:/AppData/com.erida.desktop')
+    const join = vi.fn().mockResolvedValue('C:/AppData/com.erida.desktop/artwork/local/track-1.png')
+    const convertFileSrc = vi.fn().mockReturnValue('http://asset.localhost/local-track-1.png')
+    const resolver = new TauriArtworkUrlResolver(() => true, appDataDir, join, convertFileSrc)
+
+    await expect(resolver.resolve('local/track-1.png')).resolves.toBe('http://asset.localhost/local-track-1.png')
+    expect(join).toHaveBeenCalledWith(
+      'C:/AppData/com.erida.desktop', 'artwork', 'local', 'track-1.png',
+    )
   })
 
   it('returns null when Tauri path resolution fails', async () => {
