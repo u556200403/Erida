@@ -4,6 +4,27 @@ import { describe, expect, it } from 'vitest'
 import TrackDetails from './TrackDetails.vue'
 
 describe('LibraryTrackDetails', () => {
+  it('links back to the library route', () => {
+    const wrapper = mount(TrackDetails, {
+      props: {
+        track: {
+          id: 'track-4', title: 'Afterglow', artist: 'Lumen', album: 'Aurora', duration: '3:32', artworkUrl: null,
+          availability: 'unavailable', source: { kind: 'local', locator: 'C:/Music/Afterglow.mp3' },
+        },
+      },
+      global: {
+        stubs: {
+          NuxtLink: { props: ['to'], template: '<a :data-route="JSON.stringify(to)"><slot /></a>' },
+        },
+      },
+    })
+
+    const backToLibrary = wrapper.get('a')
+
+    expect(backToLibrary.text()).toBe('Back to Library')
+    expect(backToLibrary.attributes('data-route')).toBe('"/"')
+  })
+
   it('shows the track metadata and local file path', () => {
     const wrapper = mount(TrackDetails, {
       props: {

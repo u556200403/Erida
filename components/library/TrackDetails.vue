@@ -20,6 +20,12 @@ watch(() => [props.track.id, props.track.artworkUrl], ([, nextArtworkUrl]) => {
 
 <template>
   <section>
+    <NuxtLink
+      to="/"
+      class="inline-flex text-sm font-medium text-violet-400 transition hover:text-violet-300"
+    >
+      Back to Library
+    </NuxtLink>
     <p class="text-sm font-medium text-violet-400">Track details</p>
     <h1 class="mt-2 text-3xl font-semibold tracking-tight text-white">{{ track.title }}</h1>
 
