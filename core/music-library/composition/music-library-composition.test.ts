@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { pickFiles, pickFolder, readMetadata, extractArtwork, repositoryInstances } = vi.hoisted(() => ({
+const { pickFiles, pickFolder, readMetadata, extractArtwork, extractLocalArtwork, repositoryInstances } = vi.hoisted(() => ({
   pickFiles: vi.fn(),
   pickFolder: vi.fn(),
   readMetadata: vi.fn(),
   extractArtwork: vi.fn().mockResolvedValue(null),
+  extractLocalArtwork: vi.fn().mockResolvedValue(null),
   repositoryInstances: [] as Array<{
     tracks: unknown[]
     addTrack: ReturnType<typeof vi.fn>
@@ -38,6 +39,12 @@ vi.mock('../infrastructure/tauri/tauri-audio-metadata-reader', () => ({
 vi.mock('../infrastructure/tauri/tauri-embedded-artwork-extractor', () => ({
   TauriEmbeddedArtworkExtractor: class {
     extract = extractArtwork
+  },
+}))
+
+vi.mock('../infrastructure/tauri/tauri-local-artwork-extractor', () => ({
+  TauriLocalArtworkExtractor: class {
+    extract = extractLocalArtwork
   },
 }))
 
@@ -101,6 +108,7 @@ describe('createMusicLibraryApplication', () => {
     expect(pickFiles).toHaveBeenCalledOnce()
     expect(readMetadata).toHaveBeenCalledOnce()
     expect(extractArtwork).toHaveBeenCalledOnce()
+    expect(extractLocalArtwork).toHaveBeenCalledOnce()
     expect(repositoryInstances[0]?.addTrack).toHaveBeenCalledOnce()
     expect(repositoryInstances[0]?.listTracks).toHaveBeenCalledOnce()
   })
@@ -127,6 +135,7 @@ describe('createMusicLibraryApplication', () => {
     expect(pickFolder).toHaveBeenCalledOnce()
     expect(readMetadata).toHaveBeenCalledOnce()
     expect(extractArtwork).toHaveBeenCalledOnce()
+    expect(extractLocalArtwork).toHaveBeenCalledOnce()
     await expect(musicLibraryRepository.listTracks()).resolves.toContainEqual({
       id: expect.any(String),
       title: 'Folder Track',

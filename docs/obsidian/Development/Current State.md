@@ -2,7 +2,7 @@
 
 [[Erida]] · [[Roadmap|Дорожная карта]] · [[Next Steps|Ближайшие шаги]]
 
-Документ отражает состояние `main` после завершения отображения artwork в Track Details (#49).
+Документ отражает состояние `main` после завершения local artwork fallback (#51).
 
 ## Приложение и UI
 
@@ -40,6 +40,8 @@
 - Поддерживаются JPEG, PNG, GIF и BMP.
 - Artwork проверяется по формату и magic bytes, а максимальный размер ограничен 10 MiB.
 - Извлечённые изображения кэшируются в application data directory.
+- Если embedded artwork отсутствует или его извлечение завершается ошибкой, Rust ищет в каталоге аудиофайла `cover.jpg`, `cover.png`, `folder.jpg`, затем `folder.png`; сопоставление имён регистронезависимо.
+- Локальные изображения копируются без изменения в `artwork/local`, а `Track.artworkRef` получает строго валидируемый ref вида `local/<track-id>.jpg|png`.
 - В `Track` хранится `artworkRef`, а не абсолютный filesystem path.
 - SQLite сохраняет `artworkRef`, поэтому artwork сохраняется после перезапуска приложения.
 - UI получает готовый `artworkUrl` через отдельный resolver.

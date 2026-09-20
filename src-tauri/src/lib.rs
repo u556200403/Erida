@@ -1,5 +1,6 @@
 mod audio_metadata;
 mod embedded_artwork;
+mod local_artwork;
 mod local_music_file_discovery;
 mod music_library_storage;
 
@@ -10,6 +11,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             audio_metadata::read_audio_metadata,
             embedded_artwork::extract_embedded_artwork,
+            local_artwork::extract_local_artwork,
             local_music_file_discovery::discover_audio_files,
             music_library_storage::add_library_track,
             music_library_storage::list_library_tracks,
