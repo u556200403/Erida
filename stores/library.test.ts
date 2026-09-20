@@ -20,6 +20,9 @@ const localMusicImportFacade: Pick<LocalMusicImportFacade, 'importSelectedFiles'
 const artworkUrlResolver: ArtworkUrlResolver = {
   resolve: vi.fn(),
 }
+const loadLibraryTracks = {
+  execute: vi.fn(() => repository.listTracks()),
+}
 
 describe('useLibraryStore', () => {
   beforeEach(() => {
@@ -31,6 +34,7 @@ describe('useLibraryStore', () => {
     vi.stubGlobal('computed', computed)
     vi.stubGlobal('useNuxtApp', () => ({
       $musicLibraryRepository: repository,
+      $loadLibraryTracks: loadLibraryTracks,
       $localMusicImportFacade: localMusicImportFacade,
       $artworkUrlResolver: artworkUrlResolver,
     }))

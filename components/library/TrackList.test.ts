@@ -30,4 +30,23 @@ describe('LibraryTrackList', () => {
     expect(wrapper.get('a').text()).toBe('Afterglow')
     expect(wrapper.get('a').attributes('data-route')).toBe('{"name":"tracks-id","params":{"id":"track-4"}}')
   })
+
+  it('marks unavailable local tracks without removing their details link', () => {
+    const wrapper = mount(TrackList, {
+      props: {
+        tracks: [{
+          id: 'missing-track', title: 'Unavailable', artist: 'Lumen', album: 'Aurora', duration: '3:32', artworkUrl: null,
+          availability: 'unavailable', source: { kind: 'local', locator: 'C:/Music/missing.mp3' },
+        }],
+      },
+      global: {
+        stubs: {
+          NuxtLink: { props: ['to'], template: '<a><slot /></a>' },
+        },
+      },
+    })
+
+    expect(wrapper.get('[data-testid="track-unavailable"]').text()).toBe('Unavailable')
+    expect(wrapper.get('a').text()).toBe('Unavailable')
+  })
 })

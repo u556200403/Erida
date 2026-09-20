@@ -26,6 +26,13 @@ defineProps<{
             >
               {{ track.title }}
             </NuxtLink>
+            <span
+              v-if="track.availability === 'unavailable'"
+              class="ml-2 inline-flex rounded bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-300"
+              data-testid="track-unavailable"
+            >
+              Unavailable
+            </span>
           </td>
           <td class="hidden px-4 py-3 sm:table-cell">{{ track.artist }}</td>
           <td class="hidden px-4 py-3 text-slate-400 md:table-cell">{{ track.album }}</td>

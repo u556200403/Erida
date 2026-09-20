@@ -4,6 +4,13 @@
 
 Документ отражает состояние `main` после завершения local artwork fallback (#54).
 
+## Доступность локальных треков
+
+- При загрузке библиотеки для каждого источника `local` проверяется доступность исходного файла в Tauri/Rust.
+- Недоступный или временно нечитаемый файл оставляет запись в SQLite и получает в UI метку `Unavailable`.
+- Ошибка одной проверки не отменяет загрузку остальных треков; Track Details и удаление записи остаются доступными.
+- Статус доступности вычисляется заново при загрузке и не сохраняется в SQLite; service tracks не проверяются.
+
 ## Приложение и UI
 
 - Nuxt 3 работает как клиентское SPA (`ssr: false`) с TypeScript, Pinia и Tailwind CSS.
@@ -64,8 +71,8 @@
 - Frontend/core/infrastructure покрываются Vitest.
 - Rust-модули имеют собственные unit-тесты.
 - После реализации local artwork fallback проходят:
-  - 118 frontend tests;
-  - 36 Rust tests;
+  - 123 frontend tests;
+  - 38 Rust tests;
   - Nuxt build;
   - `cargo check`;
   - `git diff --check`.

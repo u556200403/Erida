@@ -2,6 +2,7 @@ mod audio_metadata;
 mod embedded_artwork;
 mod local_artwork;
 mod local_music_file_discovery;
+mod local_track_availability;
 mod music_library_storage;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -13,6 +14,7 @@ pub fn run() {
             embedded_artwork::extract_embedded_artwork,
             local_artwork::extract_local_artwork,
             local_music_file_discovery::discover_audio_files,
+            local_track_availability::check_local_track_availability,
             music_library_storage::add_library_track,
             music_library_storage::list_library_tracks,
             music_library_storage::remove_library_track,

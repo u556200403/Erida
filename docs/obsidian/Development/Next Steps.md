@@ -8,10 +8,9 @@
 
 ## Завершение Phase 1
 
-1. Добавить понятное поведение для отсутствующих или перемещённых исходных аудиофайлов.
-2. Проверить и отполировать empty/loading/error states библиотеки.
-3. Добавить навигацию `Back to Library` из Track Details.
-4. Провести финальный native smoke test полного сценария Local Music Library.
+1. Проверить и отполировать empty/loading/error states библиотеки.
+2. Добавить навигацию `Back to Library` из Track Details.
+3. Провести финальный native smoke test полного сценария Local Music Library.
 
 Поиск, фильтрация, редактирование тегов, bulk operations и другие расширенные операции с библиотекой не входят в текущий scope Phase 1 и могут быть реализованы позже в Library Management.
 
