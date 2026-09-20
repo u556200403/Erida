@@ -8,8 +8,7 @@
 
 ## Завершение Phase 1
 
-1. Проверить и отполировать empty/loading/error states библиотеки.
-2. Провести финальный native smoke test полного сценария Local Music Library.
+1. Провести финальный native smoke test полного сценария Local Music Library.
 
 Поиск, фильтрация, редактирование тегов, bulk operations и другие расширенные операции с библиотекой не входят в текущий scope Phase 1 и могут быть реализованы позже в Library Management.
 

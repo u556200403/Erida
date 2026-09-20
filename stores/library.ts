@@ -25,7 +25,8 @@ export const useLibraryStore = defineStore('library', () => {
     $artworkUrlResolver: artworkUrlResolver,
   } = useNuxtApp()
   const tracks = ref<LibraryTrackRow[]>([])
-  const isLoading = ref(false)
+  const isLoading = ref(true)
+  const hasLoaded = ref(false)
   const isImporting = ref(false)
   const isRemoving = ref(false)
   const error = ref<string | null>(null)
@@ -53,6 +54,7 @@ export const useLibraryStore = defineStore('library', () => {
       }))
       if (request === latestLoadRequest) {
         tracks.value = rows
+        hasLoaded.value = true
       }
       return true
     } catch {
@@ -121,6 +123,7 @@ export const useLibraryStore = defineStore('library', () => {
     playlists,
     trackCount,
     isLoading,
+    hasLoaded,
     isImporting,
     isRemoving,
     error,
