@@ -2,7 +2,7 @@
 
 [[Erida]] · [[Roadmap|Дорожная карта]] · [[Next Steps|Ближайшие шаги]]
 
-Документ отражает состояние `main` после завершения local artwork fallback (#51).
+Документ отражает состояние `main` после завершения local artwork fallback (#54).
 
 ## Приложение и UI
 
@@ -47,7 +47,6 @@
 - UI получает готовый `artworkUrl` через отдельный resolver.
 - Track Details отображает artwork либо placeholder при его отсутствии/ошибке загрузки.
 - Native smoke test подтвердил полный путь: import → cache → SQLite → restart → display.
-- Следующая задача artwork pipeline — local artwork fallback (#51) для `cover.*` / `folder.*`.
 
 ## Хранение и нативная часть
 
@@ -64,9 +63,9 @@
 
 - Frontend/core/infrastructure покрываются Vitest.
 - Rust-модули имеют собственные unit-тесты.
-- После реализации artwork display проходили:
-  - 106 frontend tests;
-  - 32 Rust tests;
+- После реализации local artwork fallback проходят:
+  - 118 frontend tests;
+  - 36 Rust tests;
   - Nuxt build;
   - `cargo check`;
   - `git diff --check`.
