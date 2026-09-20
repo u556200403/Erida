@@ -14,7 +14,7 @@ describe('LibraryTrackDetails', () => {
           album: 'Aurora',
           duration: '3:32',
           artworkUrl: null,
-          source: { kind: 'local', locator: 'C:/Music/Afterglow.mp3' },
+          availability: 'unavailable', source: { kind: 'local', locator: 'C:/Music/Afterglow.mp3' },
         },
       },
     })
@@ -49,7 +49,7 @@ describe('LibraryTrackDetails', () => {
       props: {
         track: {
           id: 'track-4', title: 'Afterglow', artist: 'Lumen', album: 'Aurora', duration: '3:32', artworkUrl: null,
-          source: { kind: 'local', locator: 'C:/Music/Afterglow.mp3' },
+          availability: 'unavailable', source: { kind: 'local', locator: 'C:/Music/Afterglow.mp3' },
         },
       },
     })

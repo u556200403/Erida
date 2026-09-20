@@ -1,8 +1,8 @@
-import type { Track } from '~/core/music-library/domain/track'
+import type { LibraryTrack } from '~/core/music-library/application/load-library-tracks'
 import type { LibraryTrackRow } from '~/types/library'
 import type { Playlist } from '~/types/music'
 
-function toLibraryTrackRow(track: Track, artworkUrl: string | null): LibraryTrackRow {
+function toLibraryTrackRow(track: LibraryTrack, artworkUrl: string | null): LibraryTrackRow {
   return {
     id: track.id,
     title: track.title,
@@ -12,6 +12,7 @@ function toLibraryTrackRow(track: Track, artworkUrl: string | null): LibraryTrac
       ? '—'
       : `${Math.floor(track.durationSeconds / 60)}:${String(track.durationSeconds % 60).padStart(2, '0')}`,
     artworkUrl,
+    availability: track.availability,
     source: track.source,
   }
 }
@@ -19,6 +20,7 @@ function toLibraryTrackRow(track: Track, artworkUrl: string | null): LibraryTrac
 export const useLibraryStore = defineStore('library', () => {
   const {
     $musicLibraryRepository: musicLibraryRepository,
+    $loadLibraryTracks: loadLibraryTracks,
     $localMusicImportFacade: localMusicImportFacade,
     $artworkUrlResolver: artworkUrlResolver,
   } = useNuxtApp()
@@ -44,7 +46,7 @@ export const useLibraryStore = defineStore('library', () => {
     error.value = null
 
     try {
-      const libraryTracks = await musicLibraryRepository.listTracks()
+      const libraryTracks = await loadLibraryTracks.execute()
       const rows = await Promise.all(libraryTracks.map(async (track) => {
         const artworkUrl = await artworkUrlResolver.resolve(track.artworkRef)
         return toLibraryTrackRow(track, artworkUrl)
